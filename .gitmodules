@@ -37,3 +37,6 @@
 [submodule "components/json/cJSON"]
 	path = components/json/cJSON
 	url = https://github.com/DaveGamble/cJSON.git
+[submodule "examples/displays/ssd1306-esp-idf-i2c"]
+	path = examples/displays/ssd1306-esp-idf-i2c
+	url = https://github.com/yanbe/ssd1306-esp-idf-i2c.git
