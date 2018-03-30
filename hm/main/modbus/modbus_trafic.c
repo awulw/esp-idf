@@ -29,14 +29,26 @@ static const char *TAG = "uart_events";
  */
 
 #define EX_UART_NUM UART_NUM_0
-#define PATTERN_CHR_NUM    (3)         /*!< Set the number of consecutive and identical characters received by receiver which defines a UART pattern*/
+#define PATTERN_CHR_NUM    (1)         /*!< Set the number of consecutive and identical characters received by receiver which defines a UART pattern*/
 
 #define BUF_SIZE (1024)
 #define RD_BUF_SIZE (BUF_SIZE)
-static QueueHandle_t uart0_queue;
+
+
+void modbus_uart_init(uart_port_t port, QueueHandle_t *queue, uart_config_t *config, size_t buf_size)
+{
+	uart_param_config(port, config);
+	uart_set_pin(port, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
+	uart_driver_install(port, buf_size * 2, buf_size * 2, 20, queue, 0);
+	uart_enable_pattern_det_intr(port, '\r', PATTERN_CHR_NUM, 10000, 10, 10);
+	//Reset the pattern queue length to record at most 20 pattern positions.
+	uart_pattern_queue_reset(port, 20);
+}
 
 void modbas_trafic_task(void *unused)
 {
+	static QueueHandle_t uart0_queue, uart1_queue;
+
 	esp_log_level_set(TAG, ESP_LOG_INFO);
 
 	    /* Configure parameters of an UART driver,
@@ -48,28 +60,22 @@ void modbas_trafic_task(void *unused)
 	        .stop_bits = UART_STOP_BITS_1,
 	        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE
 	    };
-	    uart_param_config(EX_UART_NUM, &uart_config);
+
 
 	    //Set UART log level
 	    esp_log_level_set(TAG, ESP_LOG_INFO);
-	    //Set UART pins (using UART0 default pins ie no changes.)
-	    uart_set_pin(EX_UART_NUM, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
-	    //Install UART driver, and get the queue.
-	    uart_driver_install(EX_UART_NUM, BUF_SIZE * 2, BUF_SIZE * 2, 20, &uart0_queue, 0);
 
-	    //Set uart pattern detect function.
-	    uart_enable_pattern_det_intr(EX_UART_NUM, '+', PATTERN_CHR_NUM, 10000, 10, 10);
-	    //Reset the pattern queue length to record at most 20 pattern positions.
-	    uart_pattern_queue_reset(EX_UART_NUM, 20);
+	    modbus_uart_init(UART_NUM_0, &uart0_queue, &uart_config, BUF_SIZE);
+	    //modbus_uart_init(UART_NUM_1, &uart0_queue, &uart_config, BUF_SIZE);
 
-
-	    uart_event_t event;
+	uart_event_t event;
     size_t buffered_size;
     uint8_t* dtmp = (uint8_t*) malloc(RD_BUF_SIZE);
     for(;;) {
         //Waiting for UART event.
-        if(xQueueReceive(uart0_queue, (void * )&event, (portTickType)portMAX_DELAY)) {
-            bzero(dtmp, RD_BUF_SIZE);
+        if (xQueueReceive(uart0_queue, (void * )&event, (portTickType)portMAX_DELAY)){
+
+        	bzero(dtmp, RD_BUF_SIZE);
             ESP_LOGI(TAG, "uart[%d] event:", EX_UART_NUM);
             switch(event.type) {
                 //Event of UART receving data
