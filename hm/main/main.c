@@ -14,10 +14,22 @@
 
 #include "console/console.h"
 #include "modbus/modbus_trafic.h"
+#include "modbus/serial.h"
+
+
+
+
+void recv_ex(void *handler ,uint8_t* data, size_t len)
+{
+	serial_send(handler, data, len);
+}
+
+
 
 void app_main()
 {
-	//xTaskCreate(console_task, "console_task", 8192, NULL, 10, NULL);
-	xTaskCreate(modbas_trafic_task, "modbas_trafic_task", 8192, NULL, 10, NULL);
+	hm_serial_t modbus1;
 
+	serial_init(&modbus1, 0, 115200, '\r', 1024, recv_ex);
+	xTaskCreate((TaskFunction_t)serial_task, "modbas_trafic_task", 8192, (void*) (&modbus1), 10, NULL);
 }
