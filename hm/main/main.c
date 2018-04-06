@@ -18,7 +18,7 @@
 #include "console/console.h"
 #include "modbus/modbus_trafic.h"
 #include "modbus/serial.h"
-
+#include "modbus/modbus.h"
 
 
 
@@ -38,10 +38,24 @@ static void uart_event_task(void *pvParameters)
 
 void app_main()
 {
-	hm_serial_t *monitor = malloc(sizeof(hm_serial_t));
+	hm_serial_t *monitor = calloc(1, sizeof(hm_serial_t));
+	hm_serial_t *rs485 = calloc(1, sizeof(hm_serial_t));
 
-	serial_init(monitor, 0, 115200, '\r', 1024, recv_ex);
-	xTaskCreate(serial_task, "modbas_trafic_task", 8192, monitor, 10, NULL);
+	//serial_init(monitor, 0, 115200, '\r', 1024, recv_ex);
+	serial_init(rs485, 0, 115200, '\r', 1024, recv_ex, true);
+
+	handler_modbus_t *modbus = modbus_create(rs485, MODBUS_ASCII);
+	//xTaskCreate(serial_task, "modbas_trafic_task", 8192, rs485, 10, NULL);
+	uint8_t buf[128];
+	uint8_t len =0 ;
+	while(1)
+	{
+		modbus_transaction(modbus, (uint8_t *)"text\n", 5, buf, &len, 2000);
+		buf[len]=0;
+		ESP_LOGI("re", "%s len {%d}  \n", buf, len);
+
+	}
+
 
 	//xTaskCreate(uart_event_task, "uart_event_task", 2048, NULL, 12, NULL);
 }
