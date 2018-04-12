@@ -15,6 +15,7 @@
 #include "serial.h"
 
 static const char *TAG = "SERIAL";
+#define RTS_PIN UART_PIN_NO_CHANGE
 
 typedef struct{
 	uart_config_t config;
@@ -39,9 +40,9 @@ void serial_init(hm_serial_t *handler, int port, int baud_rate, const char patte
 			    };
 	memcpy(&uart->config, &config, sizeof(uart_config_t));
 	uart_param_config((uart_port_t)port, &uart->config);
-	uart_set_pin(port, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
+	uart_set_pin(port, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, RTS_PIN, UART_PIN_NO_CHANGE);
 
-	uart_driver_install(port, buf_size * 2, buf_size * 2, 20, queue ? &uart->queue : NULL, 0);
+	uart_driver_install(port, buf_size * 2, buf_size * 2, 20, &uart->queue, 0);
 	if (pattern_chr)
 		{
 			handler->pattern_det = true;
@@ -79,10 +80,9 @@ int serial_send(hm_serial_t *handler, const uint8_t* data, size_t data_len)
 int serial_recive(hm_serial_t *handler, uint8_t* data, size_t data_len, uint32_t time_out)
 {
 	TickType_t delay;
-	if (time_out)
+
 		delay = time_out / portTICK_PERIOD_MS;
-	else
-		delay = 0;
+
 	return uart_read_bytes(handler->uart_num, data, data_len, delay);
 }
 
@@ -106,10 +106,21 @@ void serial_wait_for_data_recv(hm_serial_t *handler, uint32_t time_out)
 
 }
 
+void serial_wait_send_done(hm_serial_t *handler, uint32_t time_out)
+{
+	uart_wait_tx_done(handler->uart_num, time_out / portTICK_PERIOD_MS);
+}
+
+void serial_set_rts(hm_serial_t *handler, int level)
+{
+	#if RTS_PIN > 0
+	    uart_set_rts(handler->uart_num, level);
+	#endif
+}
+
 void serial_task(hm_serial_t *hm_serial)
 {
 	uart_context_t *uart = hm_serial->priv_data;
-	uart_event_t event;
 	//while (1);
 	//ESP_LOGI(TAG, "UART2 %d serial %d", (int)hm_serial);
 	if (!uart)
