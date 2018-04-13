@@ -50,10 +50,9 @@ void app_main()
 	uint8_t len =0 ;
 	while(1)
 	{
-		modbus_transaction(modbus, (uint8_t *)"text\n", 5, buf, &len, 2000);
+		modbus_transaction(modbus, (uint8_t *)"text\n", 5, buf, &len, 50);
 		buf[len]=0;
 		ESP_LOGI("re", "%s len {%d}  \n", buf, len);
-
 	}
 
 
