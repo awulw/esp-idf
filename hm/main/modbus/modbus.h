@@ -41,6 +41,7 @@ typedef struct
 
 typedef struct
 {
+	void (*init)(void);
 	uint8_t (*frame_to_data)(modbus_frame_t *frame ,uint8_t *data, uint8_t *date_len);
 	uint8_t (*data_to_frame)(uint8_t *data, uint8_t date_len, modbus_frame_t *frame);
 }modbus_driver_t;

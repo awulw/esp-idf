@@ -5,8 +5,11 @@
  *      Author: adam
  */
 
-
+#define _GNU_SOURCE
 #include "modbus.h"
+#include <string.h>
+
+#define END_FRAME "\r\n\r\n"
 #define ASCII_TAIL_LEN 5 //crc + /r/n/r/n
 
 uint8_t hex2nible(uint8_t c) {
@@ -69,14 +72,37 @@ static uint8_t ascii_data_to_frame(uint8_t *data, uint8_t data_len, modbus_frame
 	*(f_ptr++) = '\r';
 	*(f_ptr++) = '\n';
 
-	frame->data_len = frame->data - f_ptr;
+	frame->data_len = f_ptr - frame->data;
 	return 1;
 }
 
 static uint8_t ascii_frame_to_data(modbus_frame_t *frame, uint8_t *data, uint8_t *date_len)
+{
+	uint8_t *f_start_ptr = frame->data;
+	uint8_t *f_end_ptr;
+	uint8_t *data_ptr = data;
+
+	uint8_t i;
+	for (i = 0; i < frame->data_len; i++)
+	{
+		if (*(f_start_ptr++) == ':')
 		{
-			return 0;
+			break;
 		}
+	}
+
+	f_end_ptr = memmem(f_start_ptr, frame->data_len, END_FRAME, sizeof(END_FRAME) - 1);
+	if (f_end_ptr == NULL) return 0;
+
+	for (uint8_t *ptr = f_start_ptr; ptr < f_end_ptr; ptr += 2)
+	{
+		if (hex2byte(ptr[i], ptr[i + 1], data_ptr++) == 0) return 0;
+	}
+
+	if (lrcgen(data, data_ptr - data -1) == *data_ptr) return 0;
+
+	return 1;
+}
 
 modbus_driver_t ascii_driver =
 		{
