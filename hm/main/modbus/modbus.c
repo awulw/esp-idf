@@ -65,7 +65,7 @@ modbus_err_t modbus_transaction(handler_modbus_t *handler, uint8_t *data_in, uin
 	hm_serial_t *rs485 = handler->rs485;
 	modbus_dev_t *modbus_dev = handler->priv;
 
-	if (!modbus_dev->driver->data_to_frame(data_in, data_in_len, &modbus_dev->frame)) return MODBUS_ERR_INPUT;
+	if (modbus_dev->driver->data_to_frame(data_in, data_in_len, &modbus_dev->frame) != 0) return MODBUS_ERR_INPUT;
 	serial_set_rts(rs485, 1);
 	serial_send(rs485, modbus_dev->frame.data, modbus_dev->frame.data_len);
 	serial_wait_send_done(rs485, timeout);
@@ -76,7 +76,7 @@ modbus_err_t modbus_transaction(handler_modbus_t *handler, uint8_t *data_in, uin
 		serial_wait_for_data_recv(rs485, timeout);
 		modbus_dev->frame.data_len = serial_recive(rs485, modbus_dev->frame.data, modbus_dev->frame.data_size, modbus_dev->recive_continue_timeout);
 
-		if (!modbus_dev->driver->frame_to_data(&modbus_dev->frame, data_out, data_out_len)) return MODBUS_ERR_OUTPUT;
+		if (modbus_dev->driver->frame_to_data(&modbus_dev->frame, data_out, data_out_len) != 0) return MODBUS_ERR_OUTPUT;
 	}
 	return MODBUS_OK;
 }
