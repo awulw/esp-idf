@@ -11,16 +11,23 @@
 #include <CUnit/CUnit.h>
 #include <CUnit/Basic.h>
 
-#define frame_ok_1 " :1103006B00037E\r\n\r\n 00test000012345"
-#define frame_ok_2 " :00\r\n\r\n"
-#define frame_ok_3 "fdhdh :000000\r\n"
-#define frame_ok_4 ":00000000\r\n\r\n 00test000012345"
+#define frame_ok_1 "?????:1103006B00037E\r\n??????????"
+#define frame_ok_2 " :0000\r\n\r\n"
+#define frame_ok_3 "fdhdh\r:000000\r\n"
+#define frame_ok_4 ":00000000\r\n\r\n????"
+#define frame_ok_5 ":000000\r\n"
 
 #define frame_fail_ascii  " :0000000\r\n 00test000012345"
 #define frame_fail_tail   " :00000000 00test000012345"
 #define frame_fail_head     "00000000\r\n 00test000012345"
+#define frame_fail_head2    "\r\n"
+#define frame_fail_head3    "\r"
 #define frame_fail_ascii1 ":0000X000\r\n\r\n 00test000012345"
+#define frame_fail_ascii2 ":000\r\n\r\n"
 #define frame_fail_LRC " :1103006B00037F\r\n\r\n"
+#define frame_fail_data_len  ":\r\n   "
+#define frame_fail_data_len1  ":00\r\n   "
+
 
 
 
@@ -61,12 +68,18 @@ void test_ascii_to_data()
 	CU_ASSERT_EQUAL(retval = ascii_frame_to_data(frame_init(&f, frame_ok_2), data, &data_len), 0);
 	CU_ASSERT_EQUAL(retval = ascii_frame_to_data(frame_init(&f, frame_ok_3), data, &data_len), 0);
 	CU_ASSERT_EQUAL(retval = ascii_frame_to_data(frame_init(&f, frame_ok_4), data, &data_len), 0);
+	CU_ASSERT_EQUAL(retval = ascii_frame_to_data(frame_init(&f, frame_ok_5), data, &data_len), 0);
 
-	CU_ASSERT_EQUAL(retval = ascii_frame_to_data(frame_init(&f, frame_fail_ascii), data, &data_len), 3);
-	CU_ASSERT_EQUAL(retval = ascii_frame_to_data(frame_init(&f, frame_fail_tail), data, &data_len), 2);
-	CU_ASSERT_EQUAL(retval = ascii_frame_to_data(frame_init(&f, frame_fail_head), data, &data_len), 1);
-	CU_ASSERT_EQUAL(retval = ascii_frame_to_data(frame_init(&f, frame_fail_ascii), data, &data_len), 3);
-	CU_ASSERT_EQUAL(retval = ascii_frame_to_data(frame_init(&f, frame_fail_LRC), data, &data_len), 4);
+	CU_ASSERT_EQUAL(retval = ascii_frame_to_data(frame_init(&f, frame_fail_ascii), data, &data_len), MODBUS_ERR_ASCII_INVALID_FORMAT);
+	CU_ASSERT_EQUAL(retval = ascii_frame_to_data(frame_init(&f, frame_fail_tail), data, &data_len), MODBUS_ERR_ASCII_NO_TAIL);
+	CU_ASSERT_EQUAL(retval = ascii_frame_to_data(frame_init(&f, frame_fail_head3), data, &data_len), MODBUS_ERR_ASCII_NO_HEAD);
+	CU_ASSERT_EQUAL(retval = ascii_frame_to_data(frame_init(&f, frame_fail_head), data, &data_len), MODBUS_ERR_ASCII_NO_HEAD);
+	CU_ASSERT_EQUAL(retval = ascii_frame_to_data(frame_init(&f, frame_fail_head2), data, &data_len), MODBUS_ERR_ASCII_NO_HEAD);
+	CU_ASSERT_EQUAL(retval = ascii_frame_to_data(frame_init(&f, frame_fail_ascii1), data, &data_len), MODBUS_ERR_ASCII_INVALID_FORMAT);
+	CU_ASSERT_EQUAL(retval = ascii_frame_to_data(frame_init(&f, frame_fail_ascii2), data, &data_len), MODBUS_ERR_ASCII_INVALID_FORMAT);
+	CU_ASSERT_EQUAL(retval = ascii_frame_to_data(frame_init(&f, frame_fail_LRC), data, &data_len), MODBUS_ERR_ASCII_LRC);
+	CU_ASSERT_EQUAL(retval = ascii_frame_to_data(frame_init(&f, frame_fail_data_len), data, &data_len), MODBUS_ERR_DATA_LEN);
+	CU_ASSERT_EQUAL(retval = ascii_frame_to_data(frame_init(&f, frame_fail_data_len1), data, &data_len), MODBUS_ERR_DATA_LEN);
 }
 
 void test_data_to_ascii()

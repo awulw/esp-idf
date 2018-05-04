@@ -22,10 +22,9 @@ typedef struct{
 	QueueHandle_t queue;
 	uint8_t* buf;
 	size_t buf_size;
-	recive_t recive_cb;
 }uart_context_t;
 
-void serial_init(hm_serial_t *handler, int port, int baud_rate, const char pattern_chr, size_t buf_size, recive_t recv_cb, bool queue)
+static void serial_init(hm_serial_t *handler, int port, int baud_rate, const char pattern_chr, size_t buf_size)
 {
 	uart_context_t *uart = calloc(1, sizeof(uart_context_t));
 	uart->buf = (uint8_t*) malloc(buf_size);
@@ -48,9 +47,8 @@ void serial_init(hm_serial_t *handler, int port, int baud_rate, const char patte
 			handler->pattern_det = true;
 			uart_enable_pattern_det_intr(port, pattern_chr, 1, 10000, 10, 10);
 			uart_pattern_queue_reset(port, 20);
-			ESP_LOGI(TAG, "patern inited %d", (int)handler);
+			ESP_LOGI(TAG, "patern inited %d pat [%02x] ", (int)handler, pattern_chr);
 		}
-	uart->recive_cb = recv_cb;
 
 	handler->uart_num = port;
 
@@ -72,12 +70,12 @@ void serial_init(hm_serial_t *handler, int port, int baud_rate, const char patte
 //}
 
 
-int serial_send(hm_serial_t *handler, const uint8_t* data, size_t data_len)
+static int serial_send(hm_serial_t *handler, const uint8_t* data, size_t data_len)
 {
 	return uart_write_bytes(handler->uart_num, (const char*) data, data_len);
 }
 
-int serial_recive(hm_serial_t *handler, uint8_t* data, size_t data_len, uint32_t time_out)
+static int serial_recive(hm_serial_t *handler, uint8_t* data, size_t data_len, uint32_t time_out)
 {
 	TickType_t delay;
 
@@ -86,7 +84,7 @@ int serial_recive(hm_serial_t *handler, uint8_t* data, size_t data_len, uint32_t
 	return uart_read_bytes(handler->uart_num, data, data_len, delay);
 }
 
-void serial_wait_for_data_recv(hm_serial_t *handler, uint32_t time_out)
+static modbus_err_t serial_wait_for_data_recv(hm_serial_t *handler, uint32_t time_out)
 {
 	uart_event_type_t ev_type;
 	if (handler->pattern_det)
@@ -103,70 +101,42 @@ void serial_wait_for_data_recv(hm_serial_t *handler, uint32_t time_out)
 	{
 		if (event.type == UART_EVENT_MAX || event.type == ev_type) break;
 	}
+	if (event.type == UART_EVENT_MAX)
+	{
+		return MODBUS_ERR_RECV_TIMEOUT;
+	}
+	return MODBUS_OK;
 
 }
 
-void serial_wait_send_done(hm_serial_t *handler, uint32_t time_out)
+static void serial_wait_send_done(hm_serial_t *handler, uint32_t time_out)
 {
 	uart_wait_tx_done(handler->uart_num, time_out / portTICK_PERIOD_MS);
 }
 
-void serial_set_rts(hm_serial_t *handler, int level)
+static void serial_set_rts(hm_serial_t *handler, int level)
 {
 	#if RTS_PIN > 0
 	    uart_set_rts(handler->uart_num, level);
 	#endif
 }
 
-void serial_task(hm_serial_t *hm_serial)
+static void serial_flush(hm_serial_t *handler)
 {
-	uart_context_t *uart = hm_serial->priv_data;
-	//while (1);
-	//ESP_LOGI(TAG, "UART2 %d serial %d", (int)hm_serial);
-	if (!uart)
-	{
-		ESP_LOGI(TAG, "Serial is not initialized");
-		goto exit;
-	}
-	int bytes;
-	while (true)
-	{
-		serial_wait_for_data_recv(hm_serial, 1000);
-		bytes = serial_recive(hm_serial, uart->buf, uart->buf_size, 0);
-		if (uart->recive_cb) uart->recive_cb(hm_serial, uart->buf, bytes);
-
-//		ESP_LOGI(TAG, "patern %d", (int)hm_serial->pattern_det);
-//		if (xQueueReceive(uart->queue, (void * )&event, (portTickType)portMAX_DELAY))
-//		{
-//			switch(event.type)
-//			{
-//				case UART_BUFFER_FULL:
-//				case UART_FIFO_OVF:
-//					ESP_LOGI(TAG, "BUFF OVERFLOW");
-//					uart_flush_input(hm_serial->uart_num);
-//					xQueueReset(uart->queue);
-//					break;
-//				case UART_DATA:
-//					//if (hm_serial->pattern_det) break;
-//					//int bytes = serial_recive(hm_serial, uart->buf, event.size, 0);
-//					//if (uart->recive_cb) uart->recive_cb(hm_serial, uart->buf, bytes);
-//					if (hm_serial->pattern_det)
-//					{
-//						break;
-//					}
-//				case UART_PATTERN_DET:
-//
-//						bytes = serial_recive(hm_serial, uart->buf, uart->buf_size, 0);
-//						if (uart->recive_cb) uart->recive_cb(hm_serial, uart->buf, bytes);
-//
-//					break;
-//				default:
-//				    ESP_LOGI(TAG, "uart event type: %d", event.type);
-//				    break;
-//			}
-//		}
-	}
-	exit:
-	vTaskDelete(NULL);
-
+	uart_flush(handler->uart_num);
 }
+
+static void serial_init(hm_serial_t *handler, int uart_num, int baud_rate, const char pattern_chr, size_t buf_size);
+
+
+serial_driver_t esp32_serial =
+		{
+				.init = serial_init,
+				.send = serial_send,
+				.recive = serial_recive,
+				.wait_for_data_recv = serial_wait_for_data_recv,
+				.wait_send_done = serial_wait_send_done,
+				.set_rts = serial_set_rts,
+				.flush = serial_flush
+		};
+

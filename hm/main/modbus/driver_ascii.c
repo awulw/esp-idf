@@ -7,21 +7,14 @@
 
 #define _GNU_SOURCE
 #include "modbus.h"
+#include "driver_ascii.h"
 #include <string.h>
 
 #define END_FRAME "\r\n"
-#define ASCII_TAIL_LEN 3 //crc + /r/n/r/n
+#define ASCII_TAIL_LEN 3
+//#define ASCII_TAIL_LEN 3 //crc + /r/n/
 
 
-enum
-{
-	ASCII_OK,
-	ASCII_ERR_NO_HEAD,
-	ASCII_ERR_NO_TAIL,
-	ASCII_ERR_INVALID_FORMAT,
-	ASCII_ERR_LRC
-
-}ascii_error;
 
 uint8_t hex2nible(uint8_t c) {
   if(c>='0' && c<='9') return(c - '0');
@@ -61,11 +54,11 @@ uint8_t lrcgen(uint8_t *fptr, uint8_t nb)                          /*funkcja zwr
 }
 
 
-static uint8_t ascii_data_to_frame(uint8_t *data, uint8_t data_len, modbus_frame_t *frame)
+static modbus_err_t ascii_data_to_frame(uint8_t *data, uint8_t data_len, modbus_frame_t *frame)
 {
-	frame->data_len = -1;
-	if (data_len == 0) return -1;
-	if (data_len * 2 + 1 + ASCII_TAIL_LEN > frame->data_size) return -1;
+	frame->data_len = 0;
+	if (data_len == 0) return MODBUS_ERR_INVALID_INPUT_DATA;
+	if (data_len * 2 + 1 + ASCII_TAIL_LEN > frame->data_size) return MODBUS_ERR_INVALID_INPUT_DATA;
 	frame->data[0] = ':';
 
 	uint8_t i;
@@ -84,33 +77,43 @@ static uint8_t ascii_data_to_frame(uint8_t *data, uint8_t data_len, modbus_frame
 	//*(f_ptr++) = '\n';
 
 	frame->data_len = f_ptr - frame->data;
-	return 0;
+	return MODBUS_OK;
 }
 
-static uint8_t ascii_frame_to_data(modbus_frame_t *frame, uint8_t *data, uint8_t *data_len)
+static modbus_err_t ascii_frame_to_data(modbus_frame_t *frame, uint8_t *data, uint8_t *data_len)
 {
 	uint8_t *f_start_ptr = frame->data;
-	uint8_t *f_end_ptr;
+	uint8_t *f_end_ptr = frame->data;
 	uint8_t *data_ptr = data;
-	uint8_t i;
+	int i;
+	*data_len = 0;
 
 	for (i = 0; i < frame->data_len; i++)
 	{
 		if (*(f_start_ptr++) == ':') break;
 	}
 
-	if (i > frame->data_len - sizeof(END_FRAME)) return ASCII_ERR_NO_HEAD;
+	if (i == frame->data_len) return MODBUS_ERR_ASCII_NO_HEAD;
+
+
+
+
 	f_end_ptr = memmem(f_start_ptr, frame->data_len, END_FRAME, sizeof(END_FRAME) - 1);
-	if (f_end_ptr == NULL) return ASCII_ERR_NO_TAIL;
-	*data_len = 0;
+	if (f_end_ptr == NULL) return MODBUS_ERR_ASCII_NO_TAIL;
+
+	if (f_end_ptr - f_start_ptr < 3) return MODBUS_ERR_DATA_LEN;
+
 	for (uint8_t *ptr = f_start_ptr; ptr < f_end_ptr; ptr += 2)
 	{
-		if (hex2byte(*ptr, *(ptr + 1), data_ptr++) == 0) return ASCII_ERR_INVALID_FORMAT;
+		if (hex2byte(*ptr, *(ptr + 1), data_ptr++) == 0)
+			{
+				return MODBUS_ERR_ASCII_INVALID_FORMAT;
+			}
 		(*data_len)++;
 	}
-	(*data_len)--;
-	if (lrcgen(data, data_ptr - data -1) != *(data_ptr -1)) return ASCII_ERR_LRC;
-	return ASCII_OK;
+	if (*data_len > 0) (*data_len)--;
+	if (lrcgen(data, data_ptr - data -1) != *(data_ptr -1)) return MODBUS_ERR_ASCII_LRC;
+	return MODBUS_OK;
 }
 
 modbus_driver_t ascii_driver =

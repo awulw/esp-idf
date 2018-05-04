@@ -7,13 +7,13 @@
 
 #include "modbus.h"
 
-static uint8_t rtu_data_to_frame(uint8_t *data, uint8_t date_len, modbus_frame_t *frame)
+static modbus_err_t rtu_data_to_frame(uint8_t *data, uint8_t date_len, modbus_frame_t *frame)
 		{
-			return 0;
+			return MODBUS_ERR_NOT_IMPLEMENTED;
 		}
-static uint8_t rtu_frame_to_data(modbus_frame_t *frame, uint8_t *data, uint8_t *date_len)
+static modbus_err_t rtu_frame_to_data(modbus_frame_t *frame, uint8_t *data, uint8_t *date_len)
 		{
-	return 0;
+			return MODBUS_ERR_NOT_IMPLEMENTED;
 		}
 
 modbus_driver_t rtu_driver =
