@@ -17,12 +17,23 @@
 static const char *TAG = "SERIAL";
 #define RTS_PIN UART_PIN_NO_CHANGE
 
+struct hm_serial_t
+{
+	int uart_num;
+	int baud_rate;
+	bool pattern_det;
+	void *driver;
+	void *priv_data;
+};
+
 typedef struct{
 	uart_config_t config;
 	QueueHandle_t queue;
 	uint8_t* buf;
 	size_t buf_size;
 }uart_context_t;
+
+
 
 static void serial_init(hm_serial_t *handler, int port, int baud_rate, const char pattern_chr, size_t buf_size)
 {
@@ -57,6 +68,7 @@ static void serial_init(hm_serial_t *handler, int port, int baud_rate, const cha
 	ESP_LOGI(TAG, "init handler %d", (int)handler);
 
 }
+
 
 
 //void serial_init(uart_port_t port, QueueHandle_t *queue, uart_config_t *config, size_t buf_size, const char pattern_chr)
@@ -126,8 +138,6 @@ static void serial_flush(hm_serial_t *handler)
 	uart_flush(handler->uart_num);
 }
 
-static void serial_init(hm_serial_t *handler, int uart_num, int baud_rate, const char pattern_chr, size_t buf_size);
-
 
 serial_driver_t esp32_serial =
 		{
@@ -139,4 +149,18 @@ serial_driver_t esp32_serial =
 				.set_rts = serial_set_rts,
 				.flush = serial_flush
 		};
+
+hm_serial_t *serial_create(int uart_num, int baud_rate, const char pattern_chr, size_t buf_size)
+{
+       hm_serial_t *serial = calloc(1, sizeof(hm_serial_t));
+       if (serial == NULL) return NULL;
+       serial_init(serial, uart_num, baud_rate, pattern_chr, buf_size);
+       serial->driver = &esp32_serial;
+       return serial;
+}
+
+serial_driver_t *serial_get_driver(hm_serial_t *handler)
+{
+	return handler->driver;
+}
 

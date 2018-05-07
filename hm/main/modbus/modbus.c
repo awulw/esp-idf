@@ -11,71 +11,85 @@
 
 #define MODBUS_FRAME_MAX_SIZE 128
 #define RECIVE_CONTINUE_TIMEOUT 0
+#define MODBUS_DEV_MAX 250
 
-
-
-typedef struct
+struct modbus_t
 {
 	modbus_frame_t frame;
-	modbus_driver_t *driver;
+	modbus_driver_t *modbus_driver;
+	serial_driver_t *rs485_driver;
 	uint8_t recive_continue_timeout;
+	void *rs485_context;
+};
 
-}modbus_dev_t;
-
-hm_serial_t *serial_create(int uart_num, int baud_rate, const char pattern_chr, size_t buf_size, serial_driver_t *serial_driver)
+struct modbus_dev_t
 {
-	hm_serial_t *serial = calloc(1, sizeof(hm_serial_t));
-	if (serial == NULL) return NULL;
-	serial->driver = serial_driver;
-	serial_driver->init(serial, uart_num, baud_rate, pattern_chr, buf_size);
-	return serial;
-}
+	modbus_t *bus;
+	uint8_t addrres;
+	uint8_t reg[256];
+	char *name[32];
+	void *statistic;
+};
 
-handler_modbus_t *modbus_create(hm_serial_t *rs485, modbus_driver_t *modbus_driver)
+struct modbus_master_dev
 {
-	handler_modbus_t *modbus = malloc(sizeof(handler_modbus_t));
-	modbus->rs485 = rs485;
+	modbus_dev_t *slave_devices[MODBUS_DEV_MAX];
+};
+
+modbus_t *modbus_create(void *rs485_context, serial_driver_t *rs485_driver, modbus_driver_t *modbus_driver)
+{
+	modbus_t *modbus = malloc(sizeof(modbus_t));
 	if (!modbus) return NULL;
 
-
-	modbus_dev_t *modbus_dev = malloc(sizeof(modbus_dev_t));
-	if (!modbus_dev) return NULL;
-
-	modbus_dev->frame.data = malloc(MODBUS_FRAME_MAX_SIZE);
-	modbus_dev->frame.data_size = MODBUS_FRAME_MAX_SIZE;
-	modbus_dev->driver = modbus_driver;
-
-	modbus->priv = modbus_dev;
+	modbus->rs485_context = rs485_context;
+	modbus->frame.data = malloc(MODBUS_FRAME_MAX_SIZE);
+	modbus->frame.data_size = MODBUS_FRAME_MAX_SIZE;
+	modbus->modbus_driver = modbus_driver;
+	modbus->rs485_driver = rs485_driver;
 	return modbus;
 }
 
-
-
-modbus_err_t modbus_transaction(handler_modbus_t *handler, uint8_t *data_in, uint8_t data_in_len, uint8_t *data_out, uint8_t *data_out_len, uint32_t timeout)
+modbus_err_t modbus_send(modbus_t *modbus_dev, uint8_t *data_in, uint8_t data_in_len)
 {
-	hm_serial_t *rs485 = handler->rs485;
-	modbus_dev_t *modbus_dev = handler->priv;
-	serial_driver_t *serial = rs485->driver;
+	serial_driver_t *rs485_driver = modbus_dev->rs485_driver;
+	void *rs485 = modbus_dev->rs485_context;
+	modbus_err_t ret;
+
+	ret = modbus_dev->modbus_driver->data_to_frame(data_in, data_in_len, &modbus_dev->frame);
+	if (ret) return ret;
+
+	rs485_driver->flush(rs485);
+	rs485_driver->set_rts(rs485, 1);
+	rs485_driver->send(rs485, modbus_dev->frame.data, modbus_dev->frame.data_len);
+	rs485_driver->wait_send_done(rs485, 100);
+	rs485_driver->set_rts(rs485, 0);
+	return MODBUS_OK;
+}
+
+modbus_err_t modbus_recv(modbus_t *modbus_dev, uint8_t *data_out, uint8_t *data_out_len, uint32_t timeout)
+{
+	serial_driver_t *rs485_driver = modbus_dev->rs485_driver;
+	void *rs485 = modbus_dev->rs485_context;
+	modbus_err_t ret;
+
+	ret = rs485_driver->wait_for_data_recv(rs485, timeout);
+	if (ret) return ret;
+	modbus_dev->frame.data_len = rs485_driver->recive(rs485, modbus_dev->frame.data, modbus_dev->frame.data_size, 1);
+	ret = modbus_dev->modbus_driver->frame_to_data(&modbus_dev->frame, data_out, data_out_len);
+	return ret;
+}
+
+modbus_err_t modbus_transaction(modbus_t *modbus_dev, uint8_t *data_in, uint8_t data_in_len, uint8_t *data_out, uint8_t *data_out_len, uint32_t timeout)
+{
 	modbus_err_t ret;
 	*data_out_len = 0;
 
-	ret = modbus_dev->driver->data_to_frame(data_in, data_in_len, &modbus_dev->frame);
+	ret = modbus_send(modbus_dev, data_in, data_in_len);
 	if (ret) return ret;
-
-	serial->flush(rs485);
-	serial->set_rts(rs485, 1);
-	serial->send(rs485, modbus_dev->frame.data, modbus_dev->frame.data_len);
-	serial->wait_send_done(rs485, timeout);
-	serial->set_rts(rs485, 0);
 
 	if (data_out)
 	{
-		ret = serial->wait_for_data_recv(rs485, timeout);
-		if (ret) return ret;
-		modbus_dev->frame.data_len = serial->recive(rs485, modbus_dev->frame.data, modbus_dev->frame.data_size, 0);
-
-		ret = modbus_dev->driver->frame_to_data(&modbus_dev->frame, data_out, data_out_len);
-		if (ret) return ret;
+		ret = modbus_recv(modbus_dev, data_out, data_out_len, timeout);
 	}
-	return MODBUS_OK;
+	return ret;
 }

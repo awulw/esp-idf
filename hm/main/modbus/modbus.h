@@ -13,15 +13,11 @@
 
 typedef void (*recive_t)(void *handler ,uint8_t* data, size_t len);
 
+typedef struct modbus_t modbus_t;
+typedef struct hm_serial_t hm_serial_t;
+typedef struct modbus_dev_t modbus_dev_t;
 
-typedef struct
-{
-	int uart_num;
-	int baud_rate;
-	bool pattern_det;
-	void *driver;
-	void *priv_data;
-}hm_serial_t;
+
 
 typedef enum
 {
@@ -40,20 +36,6 @@ typedef enum
 }modbus_err_t;
 
 
-typedef enum
-{
-	MODBUS_ASCII,
-	MODBUS_RTU
-}modbus_type_t;
-
-typedef struct
-{
-	hm_serial_t *rs485;
-	modbus_type_t type;
-	void *priv;
-
-}handler_modbus_t;
-
 typedef struct
 {
 	uint8_t *data;
@@ -61,15 +43,11 @@ typedef struct
 	size_t data_size;
 }modbus_frame_t;
 
-
 typedef struct
 {
-	void (*init)(void);
 	modbus_err_t (*frame_to_data)(modbus_frame_t *frame ,uint8_t *data, uint8_t *date_len);
 	modbus_err_t (*data_to_frame)(uint8_t *data, uint8_t date_len, modbus_frame_t *frame);
 }modbus_driver_t;
-
-
 
 typedef struct
 {
@@ -82,12 +60,11 @@ typedef struct
 	void (*flush)(hm_serial_t *handler);
 }serial_driver_t;
 
-
-hm_serial_t *serial_create(int uart_num, int baud_rate, const char pattern_chr, size_t buf_size, serial_driver_t *serial_driver);
-
-handler_modbus_t *modbus_create(hm_serial_t *rs485, modbus_driver_t *modbus_driver);
+modbus_t *modbus_create(void *rs485_context, serial_driver_t *rs485_driver, modbus_driver_t *modbus_driver);
 void modbus_task(void *parm);
-modbus_err_t modbus_transaction(handler_modbus_t *handler, uint8_t *data_in, uint8_t data_in_len, uint8_t *data_out, uint8_t *data_out_len, uint32_t timeout);
+modbus_err_t modbus_transaction(modbus_t *handler, uint8_t *data_in, uint8_t data_in_len, uint8_t *data_out, uint8_t *data_out_len, uint32_t timeout);
+
+
 
 #endif /* HM_MAIN_MODBUS_MODBUS_H_ */
 

@@ -39,12 +39,14 @@ static void uart_event_task(void *pvParameters)
 
 void app_main()
 {
-	hm_serial_t *rs485 = serial_create(0, 115200, '\r', 1024, &esp32_serial);
+	hm_serial_t *rs485 = serial_create(0, 115200, '\r', 1024);
 
-	handler_modbus_t *modbus = modbus_create(rs485, &ascii_driver);
+	modbus_t *modbus = modbus_create(rs485, serial_get_driver(rs485), &ascii_driver);
+
+
 	//xTaskCreate(serial_task, "modbas_trafic_task", 8192, rs485, 10, NULL);
 	uint8_t buf[128];
-	uint8_t len =0 ;
+	uint8_t len =0;
 	uint8_t ret;
 	while(1)
 	{
