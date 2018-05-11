@@ -31,10 +31,35 @@ struct modbus_dev_t
 	void *statistic;
 };
 
-struct modbus_master_dev
+struct modbus_master_dev_t
 {
-	modbus_dev_t *slave_devices[MODBUS_DEV_MAX];
+	modbus_dev_t *slave_devs[MODBUS_DEV_MAX];
+	size_t slave_devs_len;
 };
+
+
+void modbus_master_dev_init(modbus_master_dev_t *master, modbus_t *bus)
+{
+	modbus_dev_t *dev;
+	for (int i = 0; i < MODBUS_DEV_MAX; i++)
+	{
+		dev = calloc(1, sizeof(modbus_dev_t));
+		dev->addrres = i + 1;
+		dev->bus = bus;
+		master->slave_devs[i] = dev;
+		master->slave_devs_len++;
+	}
+}
+
+modbus_master_dev_t *modbus_master_create(modbus_t *bus)
+{
+	modbus_master_dev_t *master = malloc(sizeof(modbus_master_dev_t));
+	modbus_master_dev_init(master, bus);
+
+	return master;
+
+}
+
 
 modbus_t *modbus_create(void *rs485_context, serial_driver_t *rs485_driver, modbus_driver_t *modbus_driver)
 {
@@ -49,7 +74,7 @@ modbus_t *modbus_create(void *rs485_context, serial_driver_t *rs485_driver, modb
 	return modbus;
 }
 
-modbus_err_t modbus_send(modbus_t *modbus_dev, uint8_t *data_in, uint8_t data_in_len)
+modbus_err_t modbus_send(modbus_t *modbus_dev, const uint8_t *data_in, uint8_t data_in_len)
 {
 	serial_driver_t *rs485_driver = modbus_dev->rs485_driver;
 	void *rs485 = modbus_dev->rs485_context;
@@ -74,7 +99,7 @@ modbus_err_t modbus_recv(modbus_t *modbus_dev, uint8_t *data_out, uint8_t *data_
 
 	ret = rs485_driver->wait_for_data_recv(rs485, timeout);
 	if (ret) return ret;
-	modbus_dev->frame.data_len = rs485_driver->recive(rs485, modbus_dev->frame.data, modbus_dev->frame.data_size, 1);
+	modbus_dev->frame.data_len = rs485_driver->recive(rs485, modbus_dev->frame.data, modbus_dev->frame.data_size);
 	ret = modbus_dev->modbus_driver->frame_to_data(&modbus_dev->frame, data_out, data_out_len);
 	return ret;
 }

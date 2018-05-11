@@ -11,6 +11,7 @@
 #include "freertos/queue.h"
 #include "driver/uart.h"
 #include "esp_log.h"
+#include "sys/time.h"
 
 #include "serial.h"
 
@@ -21,6 +22,7 @@ struct hm_serial_t
 {
 	int uart_num;
 	int baud_rate;
+	uint64_t end_frame_timeout;
 	bool pattern_det;
 	void *driver;
 	void *priv_data;
@@ -33,9 +35,13 @@ typedef struct{
 	size_t buf_size;
 }uart_context_t;
 
+volatile uint64_t usec() {
+   struct timeval tv;
+   gettimeofday(&tv, NULL);
+   return (tv.tv_sec *1000000  + (tv.tv_usec));
+}
 
-
-static void serial_init(hm_serial_t *handler, int port, int baud_rate, const char pattern_chr, size_t buf_size)
+static void serial_init(hm_serial_t *handler, int port, int baud_rate, const char *pattern_chr, size_t buf_size)
 {
 	uart_context_t *uart = calloc(1, sizeof(uart_context_t));
 	uart->buf = (uint8_t*) malloc(buf_size);
@@ -52,20 +58,17 @@ static void serial_init(hm_serial_t *handler, int port, int baud_rate, const cha
 	uart_param_config((uart_port_t)port, &uart->config);
 	uart_set_pin(port, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, RTS_PIN, UART_PIN_NO_CHANGE);
 
-	uart_driver_install(port, buf_size * 2, buf_size * 2, 20, &uart->queue, 0);
+	uart_driver_install(port, buf_size * 2, buf_size * 2, 100, &uart->queue, 0);
 	if (pattern_chr)
 		{
 			handler->pattern_det = true;
-			uart_enable_pattern_det_intr(port, pattern_chr, 1, 10000, 10, 10);
+			uart_enable_pattern_det_intr(port, *pattern_chr, 1, 10000, 10, 10);
 			uart_pattern_queue_reset(port, 20);
-			ESP_LOGI(TAG, "patern inited %d pat [%02x] ", (int)handler, pattern_chr);
 		}
-
+	handler->end_frame_timeout = 35000000 / (baud_rate); //3.5 chr for modbus rtu
 	handler->uart_num = port;
 
 	handler->priv_data = uart;
-	ESP_LOGI(TAG, "init %d", (int)handler->priv_data);
-	ESP_LOGI(TAG, "init handler %d", (int)handler);
 
 }
 
@@ -87,13 +90,27 @@ static int serial_send(hm_serial_t *handler, const uint8_t* data, size_t data_le
 	return uart_write_bytes(handler->uart_num, (const char*) data, data_len);
 }
 
-static int serial_recive(hm_serial_t *handler, uint8_t* data, size_t data_len, uint32_t time_out)
+static int serial_recive(hm_serial_t *handler, uint8_t* data, size_t data_len)
 {
-	TickType_t delay;
-
-		delay = time_out / portTICK_PERIOD_MS;
-
-	return uart_read_bytes(handler->uart_num, data, data_len, delay);
+	int bytes = uart_read_bytes(handler->uart_num, data, data_len, 0);
+	if (handler->pattern_det)
+	{
+		return bytes;
+	}
+	int bytes_before;
+	uint64_t m = usec();
+	uint64_t time_out = handler->end_frame_timeout;
+	while (usec() - m < time_out)
+	{
+		bytes_before = bytes;
+		bytes += uart_read_bytes(handler->uart_num, data + bytes, data_len - bytes, 0);
+		if (bytes_before != bytes)
+		{
+			m = usec();
+		}
+		if (data_len == bytes) break;
+	}
+	return bytes;
 }
 
 static modbus_err_t serial_wait_for_data_recv(hm_serial_t *handler, uint32_t time_out)
@@ -113,6 +130,7 @@ static modbus_err_t serial_wait_for_data_recv(hm_serial_t *handler, uint32_t tim
 	{
 		if (event.type == UART_EVENT_MAX || event.type == ev_type) break;
 	}
+	xQueueReset(uart->queue);
 	if (event.type == UART_EVENT_MAX)
 	{
 		return MODBUS_ERR_RECV_TIMEOUT;
@@ -150,7 +168,7 @@ serial_driver_t esp32_serial =
 				.flush = serial_flush
 		};
 
-hm_serial_t *serial_create(int uart_num, int baud_rate, const char pattern_chr, size_t buf_size)
+hm_serial_t *serial_create(int uart_num, int baud_rate, const char *pattern_chr, size_t buf_size)
 {
        hm_serial_t *serial = calloc(1, sizeof(hm_serial_t));
        if (serial == NULL) return NULL;
