@@ -10,8 +10,8 @@
 #include "driver_ascii.h"
 #include <string.h>
 
-#define END_FRAME "\r\n"
-#define ASCII_TAIL_LEN 3
+#define END_FRAME "\r"
+#define ASCII_TAIL_LEN 2
 //#define ASCII_TAIL_LEN 3 //crc + /r/n/
 
 
