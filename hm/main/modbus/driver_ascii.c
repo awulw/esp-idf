@@ -92,12 +92,8 @@ static modbus_err_t ascii_frame_to_data(modbus_frame_t *frame, uint8_t *data, ui
 	{
 		if (*(f_start_ptr++) == ':') break;
 	}
-
 	if (i == frame->data_len) return MODBUS_ERR_ASCII_NO_HEAD;
-
-
-
-
+	if (frame->data_len > 127) return MODBUS_ERR_FRAME_LEN;
 	f_end_ptr = memmem(f_start_ptr, frame->data_len, END_FRAME, sizeof(END_FRAME) - 1);
 	if (f_end_ptr == NULL) return MODBUS_ERR_ASCII_NO_TAIL;
 

@@ -42,8 +42,7 @@ void app_main()
 	{
 
 		//sleep(1);
-		memcpy(buf, data_in, 6);
-		ret = modbus_core_transaction(core, buf, 6, &len);
+		ret = modbus_core_transaction(core, data_in, 6, buf, &len);
 
 		buf[len]=0;
 		ESP_LOGI("response: ", "ret = %d, len = %d, data = %02x %02x %02x %02x %02x %02x %02x %02x", ret, len, buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], buf[6], buf[7]);

@@ -13,7 +13,7 @@
 #define RECIVE_CONTINUE_TIMEOUT 0
 #define MODBUS_DEV_MAX 250
 
-struct modbus_t
+struct bus_t
 {
 	modbus_frame_t frame;
 	modbus_driver_t *modbus_driver;
@@ -24,7 +24,7 @@ struct modbus_t
 
 struct modbus_dev_t
 {
-	modbus_t *bus;
+	bus_t *bus;
 	uint8_t addrres;
 	uint8_t reg[256];
 	char *name[32];
@@ -38,7 +38,7 @@ struct modbus_master_dev_t
 };
 
 
-void modbus_master_dev_init(modbus_master_dev_t *master, modbus_t *bus)
+void modbus_master_dev_init(modbus_master_dev_t *master, bus_t *bus)
 {
 	modbus_dev_t *dev;
 	for (int i = 0; i < MODBUS_DEV_MAX; i++)
@@ -51,7 +51,7 @@ void modbus_master_dev_init(modbus_master_dev_t *master, modbus_t *bus)
 	}
 }
 
-modbus_master_dev_t *modbus_master_create(modbus_t *bus)
+modbus_master_dev_t *modbus_master_create(bus_t *bus)
 {
 	modbus_master_dev_t *master = malloc(sizeof(modbus_master_dev_t));
 	modbus_master_dev_init(master, bus);
@@ -61,9 +61,9 @@ modbus_master_dev_t *modbus_master_create(modbus_t *bus)
 }
 
 
-modbus_t *modbus_create(void *rs485_context, serial_driver_t *rs485_driver, modbus_driver_t *modbus_driver)
+bus_t *bus_create(void *rs485_context, serial_driver_t *rs485_driver, modbus_driver_t *modbus_driver)
 {
-	modbus_t *modbus = malloc(sizeof(modbus_t));
+	bus_t *modbus = malloc(sizeof(bus_t));
 	if (!modbus) return NULL;
 
 	modbus->rs485_context = rs485_context;
@@ -74,7 +74,7 @@ modbus_t *modbus_create(void *rs485_context, serial_driver_t *rs485_driver, modb
 	return modbus;
 }
 
-modbus_err_t modbus_send(modbus_t *modbus_dev, const uint8_t *data_in, uint8_t data_in_len)
+modbus_err_t bus_send(bus_t *modbus_dev, const uint8_t *data_in, uint8_t data_in_len)
 {
 	serial_driver_t *rs485_driver = modbus_dev->rs485_driver;
 	void *rs485 = modbus_dev->rs485_context;
@@ -91,7 +91,7 @@ modbus_err_t modbus_send(modbus_t *modbus_dev, const uint8_t *data_in, uint8_t d
 	return MODBUS_OK;
 }
 
-modbus_err_t modbus_recv(modbus_t *modbus_dev, uint8_t *data_out, uint8_t *data_out_len, uint32_t timeout)
+modbus_err_t bus_recv(bus_t *modbus_dev, uint8_t *data_out, uint8_t *data_out_len, uint32_t timeout)
 {
 	serial_driver_t *rs485_driver = modbus_dev->rs485_driver;
 	void *rs485 = modbus_dev->rs485_context;
@@ -104,17 +104,17 @@ modbus_err_t modbus_recv(modbus_t *modbus_dev, uint8_t *data_out, uint8_t *data_
 	return ret;
 }
 
-modbus_err_t modbus_transaction(modbus_t *modbus_dev, uint8_t *data_in, uint8_t data_in_len, uint8_t *data_out, uint8_t *data_out_len, uint32_t timeout)
+modbus_err_t bus_transaction(bus_t *modbus_dev, uint8_t *data_in, uint8_t data_in_len, uint8_t *data_out, uint8_t *data_out_len, uint32_t timeout)
 {
 	modbus_err_t ret;
 	*data_out_len = 0;
 
-	ret = modbus_send(modbus_dev, data_in, data_in_len);
+	ret = bus_send(modbus_dev, data_in, data_in_len);
 	if (ret) return ret;
 
 	if (data_out)
 	{
-		ret = modbus_recv(modbus_dev, data_out, data_out_len, timeout);
+		ret = bus_recv(modbus_dev, data_out, data_out_len, timeout);
 	}
 	return ret;
 }

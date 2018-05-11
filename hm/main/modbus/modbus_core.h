@@ -19,12 +19,14 @@ typedef struct modbus_core_t modbus_core_t;
 typedef enum
 {
 	MODBUS_RTU,
-	MODBUS_ASCII
+	MODBUS_ASCII,
+	MODBUS_MASTER,
+	MODBUS_SLAVE
 }modbus_type_t;
 
 modbus_core_t *modbus_core_create(modbus_type_t type);
 
 void modbus_core_task();
-modbus_err_t modbus_core_transaction(modbus_core_t *core, uint8_t *data_in_out, uint8_t data_in_len, uint8_t *data_out_len);
+modbus_err_t modbus_core_transaction(modbus_core_t *core, const uint8_t *data_in, uint8_t data_in_len, uint8_t *data_out, uint8_t *data_out_len);
 
 #endif /* HM_MAIN_MODBUS_MODBUS_CORE_H_ */
