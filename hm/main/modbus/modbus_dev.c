@@ -47,7 +47,7 @@ struct modbus_master_dev_t
 	size_t slave_devs_len;
 };
 
-modbus_err_t modbus_dev_proc_data(modbus_master_dev_t *dev, const uint8_t *data, const uint8_t data_len)
+modbus_err_t modbus_dev_proc_data(modbus_master_dev_t *master, const uint8_t *data, const uint8_t data_len)
 {
 	return MODBUS_OK;
 }
@@ -58,18 +58,12 @@ void modbus_dev_raport_err(modbus_dev_t *dev, modbus_err_t ret)
 	return;
 }
 
-modbus_err_t modbus_dev_send_token(modbus_dev_t *dev)
+static modbus_err_t modbus_dev_send_token(struct modbus_master_dev_t *master, uint8_t addr)
 {
-	uint8_t data_out_len = 20;
-	uint8_t data_out[data_out_len];
-	uint8_t data_in[] = {dev->addrres, TOKEN};
-	modbus_err_t ret = bus_transaction(dev->bus , data_in, sizeof(data_in), data_out, &data_out_len, dev->respond_latency);
-	if (ret != MODBUS_OK)
-		{
-			modbus_dev_raport_err(dev, ret);
-			return ret;
-		}
-	return modbus_dev_proc_data(dev, data_out, data_out_len);
+	uint8_t buf[36];
+	uint8_t buf_len = sizeof(buf);
+	uint8_t data_in[] = {addr, TOKEN};
+	return modbus_dev_transaction(master, data_in, sizeof(data_in), buf, &buf_len);
 }
 
 void modbus_devs_poll(struct modbus_master_dev_t *master)
@@ -77,8 +71,13 @@ void modbus_devs_poll(struct modbus_master_dev_t *master)
 	if (master->pull_count >= master->slave_devs_len) master->pull_count = 0;
 
 	modbus_dev_t *dev = master->slave_devs[master->pull_count];
-	if (dev->state == MODBUS_DEV_CONNECTED) modbus_dev_send_token(dev);
+	if (dev->state == MODBUS_DEV_CONNECTED) modbus_dev_send_token(master, dev->addrres);
 	master->pull_count++;
+}
+
+void modbus_devs_poll_broadcast(struct modbus_master_dev_t *master)
+{
+	modbus_dev_send_token(master, 0);
 }
 
 static void modbus_discovert(modbus_dev_t *dev)
@@ -104,7 +103,7 @@ void modbus_devs_discovery(struct modbus_master_dev_t *master)
 	if (master->discovery_count >= master->slave_devs_len) master->discovery_count = 0;
 
 	modbus_dev_t *dev = master->slave_devs[master->discovery_count];
-	if (dev->state == MODBUS_DEV_DISCONNECTED)
+	if ((dev->state == MODBUS_DEV_DISCONNECTED) && (dev->addrres != 0))
 	{
 		modbus_discovert(dev);
 	}
@@ -136,7 +135,8 @@ modbus_err_t modbus_dev_transaction(struct modbus_master_dev_t *master, uint8_t 
 	}
 
 	ret = bus_transaction(dev->bus , data_in, data_in_len, data_out, data_out_len, dev->respond_latency);
-	if (ret != MODBUS_OK)
+
+	if ((ret != MODBUS_OK) && (dev->addrres != 0))
 	{
 		*data_out_len = 0;
 		modbus_dev_raport_err(dev, ret);

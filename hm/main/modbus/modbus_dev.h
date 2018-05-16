@@ -29,6 +29,7 @@ typedef struct modbus_master_dev_t modbus_master_dev_t;
 modbus_master_dev_t *modbus_master_new(bus_t *bus);
 modbus_err_t modbus_dev_transaction(modbus_master_dev_t *master, uint8_t *data_in, uint8_t data_in_len, uint8_t *data_out, uint8_t *data_out_len);
 void modbus_devs_poll(modbus_master_dev_t *master);
+void modbus_devs_poll_broadcast(struct modbus_master_dev_t *master);
 void modbus_devs_discovery(struct modbus_master_dev_t *master);
 modbus_err_t modbus_dev_add(modbus_master_dev_t *master, uint8_t addr);
 #endif /* HM_MAIN_MODBUS_MODBUS_DEV_H_ */

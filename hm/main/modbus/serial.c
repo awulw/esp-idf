@@ -15,7 +15,6 @@
 
 #include "serial.h"
 
-static const char *TAG = "SERIAL";
 #define RTS_PIN UART_PIN_NO_CHANGE
 
 struct hm_serial_t
@@ -67,23 +66,9 @@ static void serial_init(hm_serial_t *handler, int port, int baud_rate, const cha
 		}
 	handler->end_frame_timeout = 35000000 / (baud_rate); //3.5 chr for modbus rtu
 	handler->uart_num = port;
-
 	handler->priv_data = uart;
 
 }
-
-
-
-//void serial_init(uart_port_t port, QueueHandle_t *queue, uart_config_t *config, size_t buf_size, const char pattern_chr)
-//{
-//	uart_param_config(port, config);
-//	uart_set_pin(port, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
-//	uart_driver_install(port, buf_size * 2, buf_size * 2, 20, queue, 0);
-//	uart_enable_pattern_det_intr(port, '\r', pattern_chr, 10000, 10, 10);
-//	//Reset the pattern queue length to record at most 20 pattern positions.
-//	uart_pattern_queue_reset(port, 20);
-//}
-
 
 static int serial_send(hm_serial_t *handler, const uint8_t* data, size_t data_len)
 {
@@ -157,7 +142,7 @@ static void serial_flush(hm_serial_t *handler)
 }
 
 
-serial_driver_t esp32_serial =
+static serial_driver_t esp32_serial =
 		{
 				.init = serial_init,
 				.send = serial_send,

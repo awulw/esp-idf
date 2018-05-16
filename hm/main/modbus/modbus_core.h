@@ -15,18 +15,9 @@
 
 typedef struct modbus_core_t modbus_core_t;
 
+modbus_core_t *modbus_core_create(bus_t *bus, uint8_t addr_from, uint8_t addr_to);
 
-typedef enum
-{
-	MODBUS_RTU,
-	MODBUS_ASCII,
-	MODBUS_MASTER,
-	MODBUS_SLAVE
-}modbus_type_t;
-
-modbus_core_t *modbus_core_create(bus_t *bus);
-
-void modbus_core_task();
+void modbus_core_task(void *parm);
 modbus_err_t modbus_core_transaction(modbus_core_t *core, const uint8_t *data_in, uint8_t data_in_len, uint8_t *data_out, uint8_t *data_out_len);
 
 #endif /* HM_MAIN_MODBUS_MODBUS_CORE_H_ */

@@ -73,13 +73,16 @@ static modbus_err_t rtu_frame_to_data(modbus_frame_t *frame, uint8_t *data, uint
 			if (frame->data[frame->data_len - 2] != (0x00FF & crc)) return MODBUS_ERR_RTU_CRC;
 			if (frame->data[frame->data_len - 1] != (crc >> 8)) return MODBUS_ERR_RTU_CRC;
 
-			memcpy(data, frame->data, frame->data_len - 2);
-			*data_len = frame->data_len - 2;
+			uint8_t len = frame->data_len - 2;
+			if (len > *data_len)
+				len = *data_len;
+			memcpy(data, frame->data, len);
+			*data_len = len;
 			return MODBUS_OK;
 		}
 
 modbus_driver_t rtu_driver =
 		{
-				.frame_to_data = rtu_frame_to_data,
-				.data_to_frame = rtu_data_to_frame
+			.frame_to_data = rtu_frame_to_data,
+			.data_to_frame = rtu_data_to_frame
 		};

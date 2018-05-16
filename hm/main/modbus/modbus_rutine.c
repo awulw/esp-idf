@@ -5,10 +5,11 @@
  *      Author: adam
  */
 #include "modbus_rutine.h"
-#include <stdio.h>
 #include <stdint.h>
-#include <stdbool.h>
 #include "sys/time.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/xtensa_api.h"
+#include "freertos/task.h"
 
 typedef void (*func_t)(modbus_master_dev_t *);
 
@@ -27,16 +28,13 @@ static uint64_t millis() {
 
 static rutine_item_t rutine_tab[] =
 {
-		{.func = modbus_devs_poll, .period = 100, .last_exec = 0, .priority = 1},
-		{.func = modbus_devs_discovery, .period = 100, .last_exec = 0, .priority = 0},
+		{.func = modbus_devs_poll, .period = 100, .last_exec = 0, .priority = 0},
+		{.func = modbus_devs_discovery, .period = 100, .last_exec = 0, .priority = 2},
+		{.func = modbus_devs_poll_broadcast, .period = 1, .last_exec = 0, .priority = 3},
 		{.func = NULL}
 };
 
-void (*init)();
-void (*discovery)();
-void (*reg_update)();
-
-uint8_t is_ready(rutine_item_t *item)
+static uint8_t is_ready(rutine_item_t *item)
 {
 	if (millis() - item->last_exec > item->period)
 	{
@@ -45,7 +43,16 @@ uint8_t is_ready(rutine_item_t *item)
 	return 0;
 }
 
-func_t shedule(rutine_item_t rutine_tab[])
+static uint8_t is_expired(rutine_item_t *item)
+{
+	if (millis() - item->last_exec > item->period * 10)
+	{
+		return 1;
+	}
+	return 0;
+}
+
+static func_t shedule(rutine_item_t rutine_tab[])
 {
 	uint8_t ready_prior_index = 0;
 	uint8_t ready_prior_count = 0;
@@ -55,6 +62,12 @@ func_t shedule(rutine_item_t rutine_tab[])
 	{
 		if (is_ready(rutine_tab + i))
 		{
+			if (is_expired(rutine_tab + i))
+			{
+				return rutine_tab[i].func;
+			}
+			if (!ready_prior_count)
+				ready_prior_index = i;
 			if (rutine_tab[ready_prior_index].priority <= rutine_tab[i].priority)
 			{
 				ready_prior_index = i;
@@ -63,7 +76,8 @@ func_t shedule(rutine_item_t rutine_tab[])
 		}
 		i++;
 	}
-	if (!ready_prior_count) return NULL;
+	if (!ready_prior_count)
+		return NULL;
 	rutine_tab[ready_prior_index].last_exec = millis();
 	return rutine_tab[ready_prior_index].func;
 }
@@ -78,6 +92,10 @@ void modbus_rutine(modbus_master_dev_t *master, uint64_t run_time)
 		if (func != NULL)
 		{
 			func(master);
+		}
+		else
+		{
+			vTaskDelay(1);
 		}
 	}
 }
