@@ -11,7 +11,7 @@
 
 #define MODBUS_FRAME_MAX_SIZE 128
 #define RECIVE_CONTINUE_TIMEOUT 0
-#define MODBUS_DEV_MAX 250
+
 
 struct bus_t
 {
@@ -21,44 +21,6 @@ struct bus_t
 	uint8_t recive_continue_timeout;
 	void *rs485_context;
 };
-
-struct modbus_dev_t
-{
-	bus_t *bus;
-	uint8_t addrres;
-	uint8_t reg[256];
-	char *name[32];
-	void *statistic;
-};
-
-struct modbus_master_dev_t
-{
-	modbus_dev_t *slave_devs[MODBUS_DEV_MAX];
-	size_t slave_devs_len;
-};
-
-
-void modbus_master_dev_init(modbus_master_dev_t *master, bus_t *bus)
-{
-	modbus_dev_t *dev;
-	for (int i = 0; i < MODBUS_DEV_MAX; i++)
-	{
-		dev = calloc(1, sizeof(modbus_dev_t));
-		dev->addrres = i + 1;
-		dev->bus = bus;
-		master->slave_devs[i] = dev;
-		master->slave_devs_len++;
-	}
-}
-
-modbus_master_dev_t *modbus_master_create(bus_t *bus)
-{
-	modbus_master_dev_t *master = malloc(sizeof(modbus_master_dev_t));
-	modbus_master_dev_init(master, bus);
-
-	return master;
-
-}
 
 
 bus_t *bus_create(void *rs485_context, serial_driver_t *rs485_driver, modbus_driver_t *modbus_driver)
@@ -107,7 +69,6 @@ modbus_err_t bus_recv(bus_t *modbus_dev, uint8_t *data_out, uint8_t *data_out_le
 modbus_err_t bus_transaction(bus_t *modbus_dev, uint8_t *data_in, uint8_t data_in_len, uint8_t *data_out, uint8_t *data_out_len, uint32_t timeout)
 {
 	modbus_err_t ret;
-	*data_out_len = 0;
 
 	ret = bus_send(modbus_dev, data_in, data_in_len);
 	if (ret) return ret;

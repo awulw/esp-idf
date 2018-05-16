@@ -28,23 +28,30 @@
 
 void app_main()
 {
+	//hm_serial_t *rs485 = serial_create(0, 115200, NULL, 1024);
+	//bus_t *bus = bus_create(rs485, serial_get_driver(rs485), &rtu_driver);
 
-
-	modbus_core_t *core = modbus_core_create(MODBUS_ASCII);
+	hm_serial_t *rs485 = serial_create(0, 115200, "\r", 1024);
+	bus_t *bus = bus_create(rs485, serial_get_driver(rs485), &ascii_driver);
+	modbus_core_t *core = modbus_core_create(bus);
 
 
 	xTaskCreate(modbus_core_task, "modbas_core_task", 8192, core, 10, NULL);
 	uint8_t buf[128];
-	uint8_t data_in[] = {0x11, 0x03, 0x00, 0x6b, 0x00, 0x03};
+	uint8_t data_in[] = {0x01, 0xF1, 0x00, 0x6b, 0x00, 0x03};
 	uint8_t len = 0;
 	uint8_t ret = 0;
+
+
 	while(1)
 	{
 
-		//sleep(1);
-		ret = modbus_core_transaction(core, data_in, 6, buf, &len);
+		sleep(1);
+		len = 2;
+		buf[0]=0;
+		ret = modbus_core_transaction(core, data_in, 2, buf, &len);
 
-		buf[len]=0;
+		//
 		ESP_LOGI("response: ", "ret = %d, len = %d, data = %02x %02x %02x %02x %02x %02x %02x %02x", ret, len, buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], buf[6], buf[7]);
 		//modbus_core_send_msg(core, &msg);
 	}

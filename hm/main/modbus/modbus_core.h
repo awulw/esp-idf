@@ -24,7 +24,7 @@ typedef enum
 	MODBUS_SLAVE
 }modbus_type_t;
 
-modbus_core_t *modbus_core_create(modbus_type_t type);
+modbus_core_t *modbus_core_create(bus_t *bus);
 
 void modbus_core_task();
 modbus_err_t modbus_core_transaction(modbus_core_t *core, const uint8_t *data_in, uint8_t data_in_len, uint8_t *data_out, uint8_t *data_out_len);

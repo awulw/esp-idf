@@ -35,7 +35,7 @@ typedef struct{
 	size_t buf_size;
 }uart_context_t;
 
-volatile uint64_t usec() {
+static uint64_t usec() {
    struct timeval tv;
    gettimeofday(&tv, NULL);
    return (tv.tv_sec *1000000  + (tv.tv_usec));

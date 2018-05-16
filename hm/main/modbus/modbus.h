@@ -15,8 +15,6 @@ typedef void (*recive_t)(void *handler ,uint8_t* data, size_t len);
 
 typedef struct bus_t bus_t;
 typedef struct hm_serial_t hm_serial_t;
-typedef struct modbus_dev_t modbus_dev_t;
-typedef struct modbus_master_dev_t modbus_master_dev_t;
 
 
 
@@ -34,6 +32,10 @@ typedef enum
 	MODBUS_ERR_RECV_TIMEOUT,
 	MODBUS_ERR_DATA_LEN,
 	MODBUS_ERR_FRAME_LEN,
+	MODBUS_ERR_RESPOND,
+	MODBUS_ERR_ALLOCATOR,
+	MODBUS_ERR_ADDR_EXISTS,
+	MODBUS_ERR_ADDR_NOT_EXISTS,
 	MODBUS_ERR_NOT_IMPLEMENTED
 
 }modbus_err_t;
@@ -67,7 +69,6 @@ bus_t *bus_create(void *rs485_context, serial_driver_t *rs485_driver, modbus_dri
 void bus_task(void *parm);
 modbus_err_t bus_transaction(bus_t *handler, uint8_t *data_in, uint8_t data_in_len, uint8_t *data_out, uint8_t *data_out_len, uint32_t timeout);
 
-modbus_master_dev_t *modbus_master_create(bus_t *bus);
 
 #endif /* HM_MAIN_MODBUS_MODBUS_H_ */
 

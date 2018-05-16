@@ -56,29 +56,42 @@ int clean_suite1(void)
 void test_ascii_to_data()
 {
 	uint8_t data[10];
-	uint8_t data_len;
+	uint8_t data_len = sizeof(data);
 	uint8_t retval;
 	modbus_frame_t f;
 	//ascii_frame_to_data(&test_frame, data, &date_len);
+	data_len = sizeof(data);
 	CU_ASSERT_EQUAL(retval = ascii_frame_to_data(frame_init(&f, ":61623D\r\n"), data, &data_len), 0);
 	CU_ASSERT_NSTRING_EQUAL("ab", data, 2);
 	CU_ASSERT_EQUAL(data_len, 2);
-
+	data_len = sizeof(data);
 	CU_ASSERT_EQUAL(retval = ascii_frame_to_data(frame_init(&f, frame_ok_1), data, &data_len), 0);
+	data_len = sizeof(data);
 	CU_ASSERT_EQUAL(retval = ascii_frame_to_data(frame_init(&f, frame_ok_2), data, &data_len), 0);
+	data_len = sizeof(data);
 	CU_ASSERT_EQUAL(retval = ascii_frame_to_data(frame_init(&f, frame_ok_3), data, &data_len), 0);
+	data_len = sizeof(data);
 	CU_ASSERT_EQUAL(retval = ascii_frame_to_data(frame_init(&f, frame_ok_4), data, &data_len), 0);
+	data_len = sizeof(data);
 	CU_ASSERT_EQUAL(retval = ascii_frame_to_data(frame_init(&f, frame_ok_5), data, &data_len), 0);
-
+	data_len = sizeof(data);
 	CU_ASSERT_EQUAL(retval = ascii_frame_to_data(frame_init(&f, frame_fail_ascii), data, &data_len), MODBUS_ERR_ASCII_INVALID_FORMAT);
 	CU_ASSERT_EQUAL(retval = ascii_frame_to_data(frame_init(&f, frame_fail_tail), data, &data_len), MODBUS_ERR_ASCII_NO_TAIL);
+	data_len = sizeof(data);
 	CU_ASSERT_EQUAL(retval = ascii_frame_to_data(frame_init(&f, frame_fail_head3), data, &data_len), MODBUS_ERR_ASCII_NO_HEAD);
+	data_len = sizeof(data);
 	CU_ASSERT_EQUAL(retval = ascii_frame_to_data(frame_init(&f, frame_fail_head), data, &data_len), MODBUS_ERR_ASCII_NO_HEAD);
+	data_len = sizeof(data);
 	CU_ASSERT_EQUAL(retval = ascii_frame_to_data(frame_init(&f, frame_fail_head2), data, &data_len), MODBUS_ERR_ASCII_NO_HEAD);
+	data_len = sizeof(data);
 	CU_ASSERT_EQUAL(retval = ascii_frame_to_data(frame_init(&f, frame_fail_ascii1), data, &data_len), MODBUS_ERR_ASCII_INVALID_FORMAT);
+	data_len = sizeof(data);
 	CU_ASSERT_EQUAL(retval = ascii_frame_to_data(frame_init(&f, frame_fail_ascii2), data, &data_len), MODBUS_ERR_ASCII_INVALID_FORMAT);
+	data_len = sizeof(data);
 	CU_ASSERT_EQUAL(retval = ascii_frame_to_data(frame_init(&f, frame_fail_LRC), data, &data_len), MODBUS_ERR_ASCII_LRC);
+	data_len = sizeof(data);
 	CU_ASSERT_EQUAL(retval = ascii_frame_to_data(frame_init(&f, frame_fail_data_len), data, &data_len), MODBUS_ERR_DATA_LEN);
+	data_len = sizeof(data);
 	CU_ASSERT_EQUAL(retval = ascii_frame_to_data(frame_init(&f, frame_fail_data_len1), data, &data_len), MODBUS_ERR_DATA_LEN);
 }
 

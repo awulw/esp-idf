@@ -85,7 +85,10 @@ static modbus_err_t ascii_frame_to_data(modbus_frame_t *frame, uint8_t *data, ui
 	uint8_t *f_start_ptr = frame->data;
 	uint8_t *f_end_ptr = frame->data;
 	uint8_t *data_ptr = data;
+	uint8_t data_bus_size = *data_len;
 	int i;
+
+
 	*data_len = 0;
 
 	for (i = 0; i < frame->data_len; i++)
@@ -106,6 +109,7 @@ static modbus_err_t ascii_frame_to_data(modbus_frame_t *frame, uint8_t *data, ui
 				return MODBUS_ERR_ASCII_INVALID_FORMAT;
 			}
 		(*data_len)++;
+		if (*data_len >= data_bus_size) return MODBUS_ERR_DATA_LEN;
 	}
 	if (*data_len > 0) (*data_len)--;
 	if (lrcgen(data, data_ptr - data -1) != *(data_ptr -1)) return MODBUS_ERR_ASCII_LRC;

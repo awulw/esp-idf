@@ -41,12 +41,13 @@ int clean_suite1(void)
 void test_frame_to_data()
 {
 	uint8_t data[10];
-	uint8_t data_len;
+	uint8_t data_len = 10;
 	uint8_t retval;
 	modbus_frame_t f;
 
 
 	CU_ASSERT_EQUAL(retval = rtu_frame_to_data(frame_init(&f, frame_out_1, 8), data, &data_len), 0);
+	CU_ASSERT_EQUAL(data_len, 6);
 	CU_ASSERT_EQUAL(retval = rtu_frame_to_data(frame_init(&f, frame_out_1_fail, 8), data, &data_len), MODBUS_ERR_RTU_CRC);
 	printf("\n%02x %02x %02x %02x %02x %02x data len = %d\n", data[0], data[1], data[2], data[3], data[4], data[5], data_len);
 
@@ -84,8 +85,8 @@ int main()
 
 	   /* add the tests to the suite */
 	   /* NOTE - ORDER IS IMPORTANT - MUST TEST fread() AFTER fprintf() */
-	   if ((NULL == CU_add_test(pSuite, "test of ascii_frame_to_data()", test_frame_to_data)) ||
-	       (NULL == CU_add_test(pSuite, "test of ascii_data_to_frame()", test_data_to_frame)))
+	   if ((NULL == CU_add_test(pSuite, "test of frame_to_data()", test_frame_to_data)) ||
+	       (NULL == CU_add_test(pSuite, "test of data_to_frame()", test_data_to_frame)))
 	   {
 	      CU_cleanup_registry();
 	      return CU_get_error();
