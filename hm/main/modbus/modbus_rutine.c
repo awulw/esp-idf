@@ -28,9 +28,9 @@ static uint64_t millis() {
 
 static rutine_item_t rutine_tab[] =
 {
-		{.func = modbus_devs_poll, .period = 100, .last_exec = 0, .priority = 0},
-		{.func = modbus_devs_discovery, .period = 100, .last_exec = 0, .priority = 2},
-		{.func = modbus_devs_poll_broadcast, .period = 1, .last_exec = 0, .priority = 3},
+		{.func = modbus_devs_poll, .period = 10, .last_exec = 0, .priority = 0},
+		{.func = modbus_devs_discovery, .period = 5, .last_exec = 0, .priority = 2},
+		{.func = modbus_devs_poll_broadcast, .period = 100, .last_exec = 0, .priority = 3},
 		{.func = NULL}
 };
 
@@ -64,7 +64,8 @@ static func_t shedule(rutine_item_t rutine_tab[])
 		{
 			if (is_expired(rutine_tab + i))
 			{
-				return rutine_tab[i].func;
+				ready_prior_index = i;
+				goto exit;
 			}
 			if (!ready_prior_count)
 				ready_prior_index = i;
@@ -78,8 +79,9 @@ static func_t shedule(rutine_item_t rutine_tab[])
 	}
 	if (!ready_prior_count)
 		return NULL;
-	rutine_tab[ready_prior_index].last_exec = millis();
-	return rutine_tab[ready_prior_index].func;
+	exit:
+		rutine_tab[ready_prior_index].last_exec = millis();
+		return rutine_tab[ready_prior_index].func;
 }
 
 void modbus_rutine(modbus_master_dev_t *master, uint64_t run_time)
