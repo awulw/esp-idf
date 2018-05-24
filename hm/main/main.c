@@ -22,6 +22,8 @@
 #include "modbus/modbus.h"
 #include "modbus/modbus_core.h"
 
+#include "device/device.h"
+
 
 
 
@@ -33,7 +35,9 @@ void app_main()
 	hm_serial_t *rs485 = serial_create(0, 115200, "\r", 1024);
 	bus_t *bus = bus_create(rs485, serial_get_driver(rs485), &ascii_driver);
 
-	modbus_core_t *core = modbus_core_create(bus, 1, 30);
+	device_hub_t *dev_hub = device_hub_create();
+
+	modbus_core_t *core = modbus_core_create(bus, 1, 30, dev_hub);
 
 	xTaskCreate(modbus_core_task, "modbas_core_task", 8192, core, 10, NULL);
 	uint8_t buf[128];
@@ -43,7 +47,6 @@ void app_main()
 
 	while(1)
 	{
-
 		sleep(1);
 		len = 2;
 		buf[0]=0;

@@ -13,6 +13,7 @@
 #include "modbus_conf.h"
 #include "modbus_rutine.h"
 #include "modbus_dev.h"
+#include "../device/device.h"
 #include <string.h>
 
 struct modbus_core_t
@@ -32,14 +33,14 @@ typedef struct
 	QueueHandle_t return_queue;
 }msg_t;
 
-modbus_core_t *modbus_core_create(bus_t *bus, uint8_t addr_from, uint8_t addr_to)
+modbus_core_t *modbus_core_create(bus_t *bus, uint8_t addr_from, uint8_t addr_to, void *hub)
 {
 	modbus_core_t *core = calloc(1, sizeof(modbus_core_t));
 
 	core->bus = bus;
-	core->master = modbus_master_new(bus);
-
+	core->master = modbus_master_new(bus, hub);
 	modbus_master_dev_t *master = core->master;
+	modbus_master_set_core(master, core);
 
 	modbus_dev_add(master, 0);
 	for (uint8_t i=addr_from; i<addr_to + 1; i++)
@@ -57,7 +58,7 @@ static void modbus_core_msg_proccess(struct modbus_core_t *core, uint64_t timeou
 	if (xQueueReceive(core->queue, &msg, timeout / portTICK_PERIOD_MS) == pdTRUE)
 		{
 			buf_len = msg.data_size;
-			msg.status = modbus_dev_transaction(core->master, msg.data, msg.data_len, msg.data, &buf_len);
+			msg.status = modbus_master_transaction(core->master, msg.data, msg.data_len, msg.data, &buf_len);
 			msg.data_len = buf_len;
 			if (msg.return_queue) xQueueSendToFront(msg.return_queue, (void *)&msg, 0);
 		}
@@ -91,6 +92,15 @@ modbus_err_t modbus_core_transaction(modbus_core_t *core, const uint8_t *data_in
 	msg.data_len = data_in_len;
 	msg.data = buf;
 	msg.data_size= sizeof(buf);
+
+
+	if (data_out == NULL)
+	{
+		msg.return_queue = NULL;
+		modbus_core_send_msg(core, &msg);
+		return MODBUS_OK;
+	}
+
 	msg.return_queue = xQueueCreate(1, sizeof(msg_t));
 	*data_out_len = 0;
 	modbus_core_send_msg(core, &msg);

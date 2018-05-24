@@ -10,26 +10,27 @@
 
 // MODBUS COMMAND
 
-#define INDENTITY 0x00
-#define READ_N_REG 0x01
-#define WRITE_N_REG 0x02
-#define READ_REG 0x03
-#define WRITE_REG 0x04
-#define WRITE_N_REG_IN_EEPPROM 0x05
-#define WRITE_AND 0x06
-#define WRITE_OR 0x07
-#define WRITE_EXOR 0x08
-
-#define TOKEN 0x0C
-
-#define FIRMWARE_INFO 0x20
+#include <stdio.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include <stdlib.h>
 
 #include "modbus.h"
+#include "../device/device.h"
+
 typedef struct modbus_master_dev_t modbus_master_dev_t;
-modbus_master_dev_t *modbus_master_new(bus_t *bus);
-modbus_err_t modbus_dev_transaction(modbus_master_dev_t *master, uint8_t *data_in, uint8_t data_in_len, uint8_t *data_out, uint8_t *data_out_len);
+typedef struct modbus_dev_t modbus_dev_t;
+
+modbus_master_dev_t *modbus_master_new(bus_t *bus, void *hub);
+modbus_err_t modbus_master_transaction(modbus_master_dev_t *master, uint8_t *data_in, uint8_t data_in_len, uint8_t *data_out, uint8_t *data_out_len);
 void modbus_devs_poll(modbus_master_dev_t *master);
+void modbus_master_set_core(modbus_master_dev_t *master, void *core);
+void *modbus_dev_get_core(modbus_dev_t *dev);
+uint8_t modbus_dev_get_addr(modbus_dev_t *dev);
+uint8_t *modbus_dev_get_reg(modbus_dev_t *dev);
 void modbus_devs_poll_broadcast(struct modbus_master_dev_t *master);
 void modbus_devs_discovery(struct modbus_master_dev_t *master);
 modbus_err_t modbus_dev_add(modbus_master_dev_t *master, uint8_t addr);
+
+void modbus_dev_add_reg_notification(modbus_dev_t *dev, uint8_t reg_nr, uint8_t reg_mask, void *context, void (*cb)(void *context));
 #endif /* HM_MAIN_MODBUS_MODBUS_DEV_H_ */
