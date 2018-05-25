@@ -28,9 +28,9 @@ static uint64_t millis() {
 
 static rutine_item_t rutine_tab[] =
 {
-		{.func = modbus_devs_poll, .period = 10, .last_exec = 0, .priority = 0},
-		{.func = modbus_devs_discovery, .period = 5, .last_exec = 0, .priority = 2},
-		{.func = modbus_devs_poll_broadcast, .period = 100, .last_exec = 0, .priority = 3},
+		{.func = modbus_devs_poll, .period = 1000, .last_exec = 0, .priority = 0},
+		{.func = modbus_devs_discovery, .period = 10, .last_exec = 0, .priority = 2},
+		{.func = modbus_devs_poll_broadcast, .period = 500, .last_exec = 0, .priority = 3},
 		{.func = NULL}
 };
 

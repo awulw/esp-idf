@@ -104,12 +104,14 @@ static modbus_err_t modbus_get_func_data(modbus_dev_t *dev, const uint8_t modbus
 static modbus_err_t modbus_get_indentity(modbus_dev_t *dev)
 {
 	uint8_t len = MODBUS_DEV_STR_SIZE;
+	if (dev->addrres == 1) return 0; //remove it
 	return modbus_get_func_data(dev, INDENTITY, (uint8_t *)dev->name, &len);
 }
 
 static modbus_err_t modbus_get_frimware_ver(modbus_dev_t *dev)
 {
 	uint8_t len = MODBUS_DEV_STR_SIZE;
+	if (dev->addrres == 1) return 0; //remove it
 	return modbus_get_func_data(dev, FIRMWARE_INFO, (uint8_t *)dev->frimware_ver, &len);
 }
 
@@ -122,6 +124,7 @@ static void modbus_discovery(modbus_dev_t *dev, device_hub_t *hub)
 {
 	if (dev->state == MODBUS_DEV_CONNECTED)
 		return;
+
 	switch (dev->discocery_step)
 	{
 		case 0:
@@ -129,6 +132,7 @@ static void modbus_discovery(modbus_dev_t *dev, device_hub_t *hub)
 			{
 				dev->discocery_step++;
 				dev->state = MODBUS_DEV_DISCOVERING;
+
 			}
 			break;
 		case 1:
@@ -155,7 +159,7 @@ void modbus_devs_discovery(struct modbus_master_dev_t *master)
 	if (master->discovery_count >= master->slave_devs_len) master->discovery_count = 0;
 
 	modbus_dev_t *dev = master->slave_devs[master->discovery_count];
-	if ((dev->state == MODBUS_DEV_DISCONNECTED) && (dev->addrres != 0))
+	if ((dev->state != MODBUS_DEV_CONNECTED) && (dev->addrres != 0))
 	{
 		modbus_discovery(dev, master->hub);
 	}
@@ -166,9 +170,14 @@ static modbus_err_t modbus_dev_transaction(struct modbus_dev_t *dev, uint8_t *da
 {
 	modbus_err_t ret = 0;
 
-	data_in[0] = dev->addrres;
+	data_in[MODBUS_ADDRESS] = dev->addrres;
 
 	//TODO retransmission
+	if (data_in[MODBUS_FUNCTION] & 0x80) //NO RESPNSE
+	{
+		data_out = NULL;
+		*data_out_len = 0;
+	}
 	ret = bus_transaction(dev->bus, data_in, data_in_len, data_out, data_out_len, dev->respond_latency);
 	if ((ret != MODBUS_OK) && (dev->addrres != 0) && (dev->state == MODBUS_DEV_CONNECTED))
 		{

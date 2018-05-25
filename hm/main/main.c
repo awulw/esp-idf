@@ -24,24 +24,44 @@
 
 #include "device/device.h"
 
+static hm_serial_t *debug_serial;
 
-
+void hk_console_printf(const char *text, ...)
+{
+    static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+    pthread_mutex_lock(&mutex);
+    char buffer[128];
+    uint32_t length;
+    va_list arg_list;
+    if (text != NULL)
+    {
+        /* Print the string to the buffer.*/
+        va_start(arg_list, text);
+        length = vsnprintf(buffer, sizeof(buffer), text, arg_list);
+        va_end(arg_list);
+        {
+        	serial_send(debug_serial, (uint8_t *)buffer, length);
+        }
+    }
+    pthread_mutex_unlock(&mutex);
+}
 
 void app_main()
 {
 	//hm_serial_t *rs485 = serial_create(0, 115200, NULL, 1024);
 	//bus_t *bus = bus_create(rs485, serial_get_driver(rs485), &rtu_driver);
 
-	hm_serial_t *rs485 = serial_create(0, 115200, "\r", 1024);
+	hm_serial_t *rs485 = serial_create(1, 115200, "\r", 1024);
+	debug_serial = serial_create(0, 115200, "\r", 1024);
 	bus_t *bus = bus_create(rs485, serial_get_driver(rs485), &ascii_driver);
 
 	device_hub_t *dev_hub = device_hub_create();
 
-	modbus_core_t *core = modbus_core_create(bus, 1, 30, dev_hub);
+	modbus_core_t *core = modbus_core_create(bus, 1, 5, dev_hub);
 
 	xTaskCreate(modbus_core_task, "modbas_core_task", 8192, core, 10, NULL);
 	uint8_t buf[128];
-	uint8_t data_in[] = {0x01, 0xF1, 0x00, 0x6b, 0x00, 0x03};
+	uint8_t data_in[] = {0x01, 0x81, 0x00, 0x6b, 0x00, 0x03};
 	uint8_t len = 0;
 	uint8_t ret = 0;
 

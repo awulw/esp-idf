@@ -70,7 +70,7 @@ static void serial_init(hm_serial_t *handler, int port, int baud_rate, const cha
 
 }
 
-static int serial_send(hm_serial_t *handler, const uint8_t* data, size_t data_len)
+int serial_send(hm_serial_t *handler, const uint8_t* data, size_t data_len)
 {
 	return uart_write_bytes(handler->uart_num, (const char*) data, data_len);
 }

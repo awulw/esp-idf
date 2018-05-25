@@ -97,12 +97,12 @@ modbus_err_t modbus_core_transaction(modbus_core_t *core, const uint8_t *data_in
 	if (data_out == NULL)
 	{
 		msg.return_queue = NULL;
+		*data_out_len = 0;
 		modbus_core_send_msg(core, &msg);
 		return MODBUS_OK;
 	}
 
 	msg.return_queue = xQueueCreate(1, sizeof(msg_t));
-	*data_out_len = 0;
 	modbus_core_send_msg(core, &msg);
 	if (modbus_core_recv_msg(core, &msg) != pdTRUE) goto exit;
 	memcpy(data_out, buf, msg.data_len);
