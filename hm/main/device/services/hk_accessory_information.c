@@ -4,9 +4,8 @@
 
 #include "hk_accessory_information.h"
 
-#include "../homekit/hk_byte_stream.h"
-
 #include <string.h>
+#include "../../utility/hk_byte_stream.h"
 
 #define SERVICE_NAME "Accessory Information"
 extern void hk_console_printf(const char *text, ...);
@@ -28,7 +27,6 @@ enum
 
 hk_srv_base_t *hk_accessory_information_new(void)
 {
-
     hk_srv_base_t *service = hk_srv_new(CHR_COUNT);
     if (service == NULL)
     {
@@ -44,7 +42,7 @@ hk_srv_base_t *hk_accessory_information_new(void)
     service->metadata.linked = NULL;
     service->metadata.linked_size = 0;
 
-    for (size_t i = 0; i < service->chr_size; ++i)
+    for (size_t i = 0; i < CHR_COUNT; ++i)
     {
         service->chr[i] = (hk_chr_base_t *)hk_app_chr_new();
         if (service->chr[i] == NULL)
@@ -53,7 +51,6 @@ hk_srv_base_t *hk_accessory_information_new(void)
             hk_app_srv_delete(service);
             return NULL;
         }
-        service->chr[i]->iid = hk_app_get_next_iid();
     }
 
     // TODO(MD): add persistent storage keys
@@ -88,6 +85,7 @@ hk_srv_base_t *hk_accessory_information_new(void)
     ((hk_app_chr_t *)service->chr[CHR_ACCESSORY_FLAGS])->base.metadata = &hk_chr_metadata_accessory_flags;
     ((hk_app_chr_t *)service->chr[CHR_ACCESSORY_FLAGS])->base.value.format = HK_VALUE_FORMAT_U32;
     ((hk_app_chr_t *)service->chr[CHR_ACCESSORY_FLAGS])->base.value.u32 = 0;
+    service->chr_size = CHR_COUNT;
 
     hk_console_printf("%s service created - IID: %d \n", SERVICE_NAME, service->iid);
     return service;

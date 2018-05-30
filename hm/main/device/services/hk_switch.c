@@ -4,7 +4,7 @@
 
 #include "hk_switch.h"
 
-#include "../homekit/hk_byte_stream.h"
+#include "../../utility/hk_byte_stream.h"
 extern void hk_console_printf(const char *text, ...);
 
 #include <string.h>
@@ -53,7 +53,7 @@ hk_srv_base_t *hk_switch_new(bool primary, const hk_instance_id_t *linked, size_
         service->metadata.linked_size = linked_size;
     }
 
-    for (size_t i = 0; i < service->chr_size; ++i)
+    for (size_t i = 0; i < service->chr_cap; ++i)
     {
         service->chr[i] = (hk_chr_base_t *)hk_app_chr_new();
         if (service->chr[i] == NULL)

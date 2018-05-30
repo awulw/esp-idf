@@ -4,10 +4,10 @@
 
 #include "hk_lightbulb.h"
 
-#include "../homekit/hk_byte_stream.h"
 #include "../hap/hk_app.h"
 
 #include <string.h>
+#include "../../utility/hk_byte_stream.h"
 
 #define SERVICE_NAME "Lightbulb"
 extern void hk_console_printf(const char *text, ...);
@@ -65,27 +65,13 @@ hk_srv_base_t *hk_lightbulb_new(size_t chr_size)
     service->metadata.hidden = false;
 
     // Initialize characteristics
-    for (size_t i = 0; i < service->chr_size; ++i)
-    {
-        service->chr[i] = (hk_chr_base_t *)hk_app_chr_new();
-        if (service->chr[i] == NULL)
-        { // cleanup and return null
-            hk_console_printf("%s service construction error - out of resources \n", SERVICE_NAME);
-            hk_app_srv_delete(service);
-            return NULL;
-        }
-        service->chr[i]->iid = hk_app_get_next_iid();
-    }
+
 
     // TODO(SB): add persistent storage keys
-//    ((hk_app_chr_t *)service->chr[CHR_ON])->read = NULL;
-//    ((hk_app_chr_t *)service->chr[CHR_ON])->write = NULL;
 //    ((hk_app_chr_t *)service->chr[CHR_ON])->base.metadata = &hk_chr_metadata_on;
 //    ((hk_app_chr_t *)service->chr[CHR_ON])->base.value.format = HK_VALUE_FORMAT_BOOL;
 //    ((hk_app_chr_t *)service->chr[CHR_ON])->base.value.b = false;
 //
-//    ((hk_app_chr_t *)service->chr[CHR_BRIGHTNESS])->read = NULL;
-//    ((hk_app_chr_t *)service->chr[CHR_BRIGHTNESS])->write = NULL;
 //    ((hk_app_chr_t *)service->chr[CHR_BRIGHTNESS])->base.metadata = &hk_chr_metadata_brightness;
 //    ((hk_app_chr_t *)service->chr[CHR_BRIGHTNESS])->base.value.format = HK_VALUE_FORMAT_I32;
 //    ((hk_app_chr_t *)service->chr[CHR_BRIGHTNESS])->base.value.i32 = 0;

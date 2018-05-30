@@ -29,6 +29,7 @@ void hk_app_chr_delete(hk_app_chr_t *chr);
 void hk_app_srv_delete(hk_srv_base_t *srv);
 hk_ret_t hk_app_add_srv(hk_acc_base_t *acc, hk_srv_base_t *srv);
 hk_ret_t hk_app_add_chr(hk_srv_base_t *srv, hk_app_chr_t *chr);
+hk_app_chr_t *hk_app_chr_new_b(void *on_read_b, void *on_write_b);
 
 typedef struct
 {

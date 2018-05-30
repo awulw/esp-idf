@@ -120,6 +120,7 @@ void console_task(void *unused)
     /* Register commands */
     esp_console_register_help_command();
     register_system();
+    register_device();
     register_wifi();
 
     /* Prompt to be printed before each line.

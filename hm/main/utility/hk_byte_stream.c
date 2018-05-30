@@ -2,7 +2,8 @@
     Copyright (C) 2017 Tieto Poland Sp. z o. o.
 */
 
-#include "hk_byte_stream.h"
+#include "../utility/hk_byte_stream.h"
+
 #include <assert.h>
 
 #define MAX(a, b) ((a) > (b) ? a : b)

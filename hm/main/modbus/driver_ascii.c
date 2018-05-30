@@ -16,26 +16,26 @@
 
 
 
-uint8_t hex2nible(uint8_t c) {
+static uint8_t hex2nible(uint8_t c) {
   if(c>='0' && c<='9') return(c - '0');
   if(c>='A' && c<='F') return(c - 'A' + 10);
   return 0xff;
 }
 
-uint8_t nible2hex(uint8_t d) {
+static uint8_t nible2hex(uint8_t d) {
 
   if (d<10 )  return('0' + d);
   if (d>=10 && d<=15)  return('A' + (d - 10) );
   return 0;
 }
 
-void byte2hex(uint8_t c, uint8_t *h1, uint8_t *h2) {
+static void byte2hex(uint8_t c, uint8_t *h1, uint8_t *h2) {
 
    *h1 = nible2hex((c & 0xf0) >> 4);
    *h2 = nible2hex( c & 0x0f);
 }
 
-uint8_t hex2byte(uint8_t s1, uint8_t s2, uint8_t *byte) {
+static uint8_t hex2byte(uint8_t s1, uint8_t s2, uint8_t *byte) {
 	uint8_t n1 = hex2nible(s1);
 	uint8_t n2 = hex2nible(s2);
 	if (n1 > 0x0F) return 0;
@@ -44,7 +44,7 @@ uint8_t hex2byte(uint8_t s1, uint8_t s2, uint8_t *byte) {
 	return 1;
 }
 
-uint8_t lrcgen(uint8_t *fptr, uint8_t nb)                          /*funkcja zwraca jeden bajt*/
+static uint8_t lrcgen(uint8_t *fptr, uint8_t nb)                          /*funkcja zwraca jeden bajt*/
 {
 	uint8_t lrc, sum = 0;
      while (nb--)

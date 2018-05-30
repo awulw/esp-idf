@@ -24,10 +24,9 @@ static int modbus_send_to_queue(modbus_dev_t *modbus_dev, uint8_t *data, uint8_t
 
 static int modbus_io_bit_read(void *modbus_dev, void *driver_context, uint8_t *buf, uint8_t buf_len)
 {
-	uint8_t *driver_data = driver_context;
+	uint8_t *drv_context = driver_context;
 	uint8_t *reg = modbus_dev_get_reg(modbus_dev);
-
-	if (reg[driver_data[0]] & driver_data[1])
+	if (reg[drv_context[DRIVER_IO_REG_NR]] & drv_context[DRIVER_IO_BIT_MASK])
 	{
 		*buf = 1;
 	}
@@ -66,7 +65,7 @@ static void chr_register_onoff(device_t *device, modbus_dev_t *modbus_dev, uint8
 	uint8_t *drv_context = malloc(2 * sizeof(uint8_t));
 	drv_context[DRIVER_IO_REG_NR] = reg_nr;
 	drv_context[DRIVER_IO_BIT_MASK] = bit_mask;
-	device_add_chr(device, CHR_ONOFF, drv_context, &io_driver_reg_mask);
+	device_add_chr_b(device, CHR_ONOFF, drv_context, &io_driver_reg_mask);
 	modbus_dev_add_reg_notification(modbus_dev, reg_nr, bit_mask, device, device_notification_cb);
 }
 

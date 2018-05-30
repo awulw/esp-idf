@@ -1,7 +1,8 @@
 /*
  * Copyright (C) 2017 Tieto Poland Sp. z o. o.
  */
-#include "hk_queue.h"
+#include "../utility/hk_queue.h"
+
 #include <string.h>
 #include <stdio.h>
 #include <unistd.h>

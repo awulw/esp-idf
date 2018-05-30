@@ -6,7 +6,7 @@
 #define HK_QUEUE_H_
 #define QUOEUE_MAX_LENGTH 64
 
-#include "../hk_api.h"
+#include "../device/hk_api.h"
 #include <pthread.h>
 
 typedef struct queue_item queue_item_t;

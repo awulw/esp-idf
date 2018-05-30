@@ -24,7 +24,24 @@ hk_instance_id_t hk_app_get_next_iid(void)
 
 hk_app_chr_t *hk_app_chr_new(void)
 {
-    return calloc(1, sizeof(hk_app_chr_t));
+	hk_app_chr_t *chr = calloc(1, sizeof(hk_app_chr_t));
+	if (chr == NULL)
+	{
+		return NULL;
+	}
+	chr->base.iid = hk_app_get_next_iid();
+	return chr;
+}
+
+hk_app_chr_t *hk_app_chr_new_b(void *on_read_b, void *on_write_b)
+{
+	hk_app_chr_t *chr = hk_app_chr_new();
+	chr->base.on_read = on_read_b;
+	chr->base.on_write = on_write_b;
+	chr->base.metadata = &hk_chr_metadata_on;
+	chr->base.value.format = HK_VALUE_FORMAT_BOOL;
+	chr->base.value.b = false;
+	return chr;
 }
 
 void hk_app_chr_delete(hk_app_chr_t *chr)
@@ -82,19 +99,6 @@ hk_ret_t hk_app_add_chr(hk_srv_base_t *srv, hk_app_chr_t *chr)
 	return HK_RET_SUCCESS;
 }
 
-hk_hap_status_t on_read(void *chr_ptr)
-{
-    hk_console_printf("ON READ CALBACK\n\n");
-    hk_chr_base_t *chr = chr_ptr;
-
-    return 0;
-}
-hk_hap_status_t on_write(void *chr_ptr)
-{
-    hk_chr_base_t *chr = chr_ptr;
-    hk_console_printf("ON write %d CALBACK\n\n", chr->value.i32);
-    return 0;
-}
 
 
 

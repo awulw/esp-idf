@@ -5,7 +5,7 @@
 #ifndef HOMEKIT_HK_BYTE_STREAM_H
 #define HOMEKIT_HK_BYTE_STREAM_H
 
-#include "../hk_api.h"
+#include "../device/hk_api.h"
 
 #include <stdbool.h>
 #include <stdint.h>

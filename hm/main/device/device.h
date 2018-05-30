@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include "hap/hk_app.h"
 
 typedef enum
 {
@@ -38,9 +39,10 @@ typedef struct device_t device_t;
 void (*device_notification_cb)(void *device);
 
 device_hub_t *device_hub_create();
+hk_acc_base_t *device_get_acc(device_hub_t *hub);
 
 device_t *device_create(device_hub_t *hub, void *dev_context, dev_type_t type);
-void device_add_chr(device_t *dev, chr_type_t type, void *driver_context, io_driver_t *io_driver);
+void device_add_chr_b(device_t *dev, chr_type_t type, void *driver_context, io_driver_t *io_driver);
 
 
 

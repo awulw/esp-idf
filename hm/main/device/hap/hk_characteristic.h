@@ -141,6 +141,7 @@ typedef struct
     bool perms;
     bool type;
     bool ev;
+    hk_value_t value;
 } hk_chr_request_t;
 
 typedef struct
