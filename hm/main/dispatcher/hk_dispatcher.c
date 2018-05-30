@@ -167,7 +167,7 @@ void hk_dispatcher_write_chr(hk_dispatcher_acc_map_t *acc_map, hk_chr_write_t *c
         chrs_respond[i].id.iid = chrs_w[i].id.iid;
         chrs_respond[i].id.aid = chrs_w[i].id.aid;
         chrs_respond[i].status = 0;
-        chrs_respond[i].chr = NULL;
+        chrs_respond[i].chr = HK_RET_SUCCESS;
         acc = hk_dispatcher_find_aid(acc_map, chrs_w[i].id.aid);
         if (acc == NULL)
         {
@@ -191,11 +191,12 @@ void hk_dispatcher_write_chr(hk_dispatcher_acc_map_t *acc_map, hk_chr_write_t *c
             continue;
         }
         chrs_respond[i].chr = chr;
-        hk_chr_copy_value(&chr->value, &chrs_w[i].value);
         if (chr->on_write != NULL)
         {
             chrs_respond[i].status = chr->on_write(chr);
         }
+        if (chrs_respond[i].status == HK_HAP_STATUS_OK)
+        	hk_chr_copy_value(&chr->value, &chrs_w[i].value);
     }
 }
 
