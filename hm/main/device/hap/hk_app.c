@@ -22,6 +22,12 @@ hk_instance_id_t hk_app_get_next_iid(void)
     return s_iid++;
 }
 
+hk_instance_id_t hk_app_get_next_aid(void)
+{
+    static hk_accessory_id_t s_aid = 1;
+    return s_aid++;
+}
+
 hk_app_chr_t *hk_app_chr_new(void)
 {
 	hk_app_chr_t *chr = calloc(1, sizeof(hk_app_chr_t));
@@ -68,12 +74,12 @@ void hk_app_srv_delete(hk_srv_base_t *srv)
     hk_srv_delete(srv);
 }
 
-hk_acc_base_t *hk_app_create_acc(hk_accessory_id_t aid)
+hk_acc_base_t *hk_app_create_acc()
 {
     hk_acc_base_t *acc = calloc(1, sizeof(hk_acc_base_t));
     if (acc == NULL)
         return NULL;
-    acc->aid = aid;
+    acc->aid = hk_app_get_next_aid();
     acc->srv[0] = hk_accessory_information_new();
     acc->srv_size = 1;
     return acc;

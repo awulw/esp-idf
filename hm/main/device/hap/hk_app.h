@@ -24,7 +24,7 @@ typedef struct
 
 hk_instance_id_t hk_app_get_next_iid(void);
 hk_app_chr_t *hk_app_chr_new(void);
-hk_acc_base_t *hk_app_create_acc(hk_accessory_id_t aid);
+hk_acc_base_t *hk_app_create_acc(void);
 void hk_app_chr_delete(hk_app_chr_t *chr);
 void hk_app_srv_delete(hk_srv_base_t *srv);
 hk_ret_t hk_app_add_srv(hk_acc_base_t *acc, hk_srv_base_t *srv);

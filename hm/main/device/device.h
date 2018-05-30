@@ -35,14 +35,15 @@ typedef struct
 
 typedef struct device_hub_t device_hub_t;
 typedef struct device_t device_t;
+typedef struct device_srv_t device_srv_t;
 
 void (*device_notification_cb)(void *device);
 
 device_hub_t *device_hub_create();
-hk_acc_base_t *device_get_acc(device_hub_t *hub);
 
-device_t *device_create(device_hub_t *hub, void *dev_context, dev_type_t type);
-void device_add_chr_b(device_t *dev, chr_type_t type, void *driver_context, io_driver_t *io_driver);
+device_t *device_create(device_hub_t *hub, void *dev_context);
+device_srv_t *device_srv_create(device_t *device, dev_type_t type);
+void device_chr_create_b(device_srv_t *dev_srv, chr_type_t type, void *driver_context, io_driver_t *io_driver);
 
 
 

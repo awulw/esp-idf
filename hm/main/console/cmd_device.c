@@ -42,7 +42,6 @@ static int write_chr(int argc, char** argv)
 			strcpy(buf, argv[1]);
 			strcpy(buf + strlen(argv[1]), " ");
 			strcpy(buf + strlen(argv[1]) + 1, argv[2]);
-			hk_console_printf("BUF: [%s]", buf);
 			hk_dispatcher_transaction(g_acc_map, HK_DISPATCHER_PUT_CHARACTERISTICS, (byte_t *)buf, strlen(buf), 0);
 		}
     return 0;

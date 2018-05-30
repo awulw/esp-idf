@@ -60,8 +60,8 @@ void app_main()
 
 
 	g_acc_map = hk_dispatcher_new();
-	device_hub_t *dev_hub = device_hub_create();
-	hk_dispatcher_register_accessory(g_acc_map, device_get_acc(dev_hub));
+	device_hub_t *dev_hub = device_hub_create(g_acc_map, hk_dispatcher_register_accessory);
+
 
 
 	modbus_core_t *core = modbus_core_create(bus, 1, 5, dev_hub);
