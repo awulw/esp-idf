@@ -989,6 +989,21 @@ static int uart_fill_fifo(uart_port_t uart_num, const char* buffer, uint32_t len
     return copy_cnt;
 }
 
+int uart_write_fifo(uart_port_t uart_num, const char* src, size_t size)
+{
+	size_t original_size = size;
+	while(size) {
+		size_t sent = uart_fill_fifo(uart_num, (char*) src, size);
+		if(sent < size) {
+			p_uart_obj[uart_num]->tx_waiting_fifo = true;
+			uart_enable_tx_intr(uart_num, 1, UART_EMPTY_THRESH_DEFAULT);
+		}
+		size -= sent;
+		src += sent;
+	}
+	return original_size;
+}
+
 int uart_tx_chars(uart_port_t uart_num, const char* buffer, uint32_t len)
 {
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", (-1));

@@ -544,7 +544,6 @@ esp_err_t uart_driver_delete(uart_port_t uart_num);
  *     - ESP_ERR_TIMEOUT  Timeout
  */
 esp_err_t uart_wait_tx_done(uart_port_t uart_num, TickType_t ticks_to_wait);
-
 /**
  * @brief Send data to the UART port from a given buffer and length.
  * 
@@ -560,6 +559,10 @@ esp_err_t uart_wait_tx_done(uart_port_t uart_num, TickType_t ticks_to_wait);
  *     - OTHERS (>=0) The number of bytes pushed to the TX FIFO
  */
 int uart_tx_chars(uart_port_t uart_num, const char* buffer, uint32_t len);
+
+
+//This function by itself is not thread-safe
+int uart_write_fifo(uart_port_t uart_num, const char* src, size_t size);
 
 /**
  * @brief Send data to the UART port from a given buffer and length,
@@ -578,6 +581,7 @@ int uart_tx_chars(uart_port_t uart_num, const char* buffer, uint32_t len);
  *     - (-1) Parameter error
  *     - OTHERS (>=0) The number of bytes pushed to the TX FIFO
  */
+
 int uart_write_bytes(uart_port_t uart_num, const char* src, size_t size);
 
 /**
