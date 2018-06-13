@@ -910,6 +910,7 @@ static void uart_rx_intr_handler_default(void *param)
             uart_reg->int_clr.at_cmd_char_det = 1;
             uart_event.type = UART_PATTERN_DET;
         } else if(uart_intr_status & UART_TX_DONE_INT_ST_M) {
+        	uart_set_rts(uart_num, 1);
             uart_disable_intr_mask(uart_num, UART_TX_DONE_INT_ENA_M);
             uart_clear_intr_status(uart_num, UART_TX_DONE_INT_CLR_M);
             xSemaphoreGiveFromISR(p_uart_obj[uart_num]->tx_done_sem, &HPTaskAwoken);
@@ -1074,6 +1075,7 @@ int uart_write_bytes(uart_port_t uart_num, const char* src, size_t size)
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", (-1));
     UART_CHECK((p_uart_obj[uart_num] != NULL), "uart driver error", (-1));
     UART_CHECK(src, "buffer null", (-1));
+    uart_set_rts(uart_num, 0);
     return uart_tx_all(uart_num, src, size, 0, 0);
 }
 
