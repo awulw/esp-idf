@@ -1002,6 +1002,7 @@ int uart_write_fifo(uart_port_t uart_num, const char* src, size_t size)
 		size -= sent;
 		src += sent;
 	}
+	uart_enable_intr_mask(uart_num, UART_TX_DONE_INT_ENA_M);
 	return original_size;
 }
 
